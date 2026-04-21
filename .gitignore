@@ -63,3 +63,11 @@ backups/
 tmp/
 temp/
 *.tmp
+secrets/
+secrets/
+data/
+.env
+secrets/
+data/
+.env
+secrets/
