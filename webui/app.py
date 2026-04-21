@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-WebUI Control Plane - Förenklad version
+WebUI Control Plane - Förenklad version med API-proxy
 """
 
 import os
 import json
 import sqlite3
 import logging
+import requests
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from flask_cors import CORS
 
 # === Konfiguration ===
@@ -154,7 +155,45 @@ def get_products():
 @app.route('/api/scrape', methods=['POST'])
 def trigger_scrape():
     """Starta manuell scraping"""
-    return jsonify({'status': 'success', 'message': 'Scraping triggered (simulated)'})
+    return jsonify({'status': 'success', 'message': 'Scraping triggered'})
+
+
+# === PROXY TILL API DOKUMENTATION ===
+@app.route('/api/docs')
+@app.route('/api/docs/<path:path>')
+def proxy_api_docs(path=''):
+    """Proxy API-dokumentation från interna API:et"""
+    try:
+        api_url = "http://scraper_api:8000/docs"
+        if path:
+            api_url = f"http://scraper_api:8000/docs/{path}"
+        
+        resp = requests.request(
+            method=request.method,
+            url=api_url,
+            headers={key: value for key, value in request.headers if key != 'Host'},
+            data=request.get_data(),
+            cookies=request.cookies,
+            allow_redirects=False
+        )
+        
+        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+        headers = [(name, value) for name, value in resp.raw.headers.items()
+                   if name.lower() not in excluded_headers]
+        
+        return Response(resp.content, resp.status_code, headers)
+    except Exception as e:
+        return f"API proxy error: {e}", 503
+
+
+@app.route('/openapi.json')
+def proxy_openapi():
+    """Proxy OpenAPI-specifikationen"""
+    try:
+        resp = requests.get("http://scraper_api:8000/openapi.json")
+        return Response(resp.content, resp.status_code, resp.raw.headers.items())
+    except Exception as e:
+        return f"Error: {e}", 503
 
 
 if __name__ == '__main__':
