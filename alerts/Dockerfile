@@ -6,6 +6,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY alerts.py .
-COPY price_alerts.py .
 
 CMD ["python", "alerts.py"]
