@@ -1,5 +1,4 @@
-# 🕷️ Web Scraper Platform
-
+## 🕷️ WEB Scraper Playform
 [![Build and Push Images](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -8,9 +7,9 @@ Lättviktig, konfigurerbar web scraping-plattform med WebUI, API och prisbevakni
 ## ✨ Funktioner
 
 - 🔍 Multi-site scraping - Skrapa valfri e-handelssida med CSS-selektorer
-- 🮎 WebUI - Konfigurera och övervaka via webbgränssnitt (port 3000)
-- 🡠 REST API - Hämta data programmatiskt (port 8000)
-- 🔶 Prisbevakning - Discord-notiser vid prisfall
+- 🎨 WebUI - Konfigurera och övervaka via webbgränssnitt (port 3000)
+- 📡 REST API - Hämta data programmatiskt (port 8000)
+- 📉 Prisbevakning - Discord-notiser vid prisfall
 - 💾 SQLite - Enkel, filbaserad databas - ingen extra infrastruktur
 - 🐳 Docker - Kör allt med en docker compose up
 
@@ -55,7 +54,7 @@ python simple_scraper.py
 - `Komplett.se:` product_selector="div.product-list-item", price_selector="span.product-price-now"
 - `Webhallen.com:` product_selector="div.product-item", price_selector="span.price"
 
-## 🦆 Tjänster (Docker)
+## 📦 Tjänster (Docker)
 
 | Tjänst | Port | Beskrivning |
 |--------|-----|-----------|
@@ -64,7 +63,7 @@ python simple_scraper.py
 | scraper_webui | 3000 | Webbgränssnitt |
 | scraper_alerts | - | Discord-notiser |
 
-## 🣡 API Exempel
+## 📡 API Exempel
 
 ```bash
 # Hämta alla produkter
@@ -82,7 +81,7 @@ curl http://localhost:8000/export/csv > produkter.csv
 
 API-dokumentation: `http://localhost:8000/docs`
 
-## 🤢 Konfiguration (.env)
+## 🔧 Konfiguration (.env)
 
 ```bash
 WEBUI_PORT=3000
@@ -94,6 +93,6 @@ MIN_DROP_AMOUNT=100
 COOLDOWN_HOURS=24
 ```
 
-## 📥 Licens
+## 📝 Licens
 
 MIT - se [Licens](Licens)
