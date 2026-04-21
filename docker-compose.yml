@@ -41,9 +41,9 @@ services:
       DB_NAME: scraper
       DB_USER: scraper
       DB_PASSWORD: scraper_password
-      CONCURRENT_PAGES: ${CONCURRENT_PAGES:-3}
-      HEADLESS: ${HEADLESS:-true}
-      SCRAPE_INTERVAL: ${SCRAPE_INTERVAL:-3600}
+      CONCURRENT_PAGES: ${CONCURRENT_PAGES}
+      HEADLESS: ${HEADLESS}
+      SCRAPE_INTERVAL: ${SCRAPE_INTERVAL}
     volumes:
       - ${DOCKER}/scraper/logs:/logs
       - ${DOCKER}/scraper/playwright-cache:/root/.cache/ms-playwright
@@ -82,7 +82,7 @@ services:
       DB_NAME: scraper
       DB_USER: scraper
       DB_PASSWORD: scraper_password
-      API_KEY: ${API_KEY:-changeme}
+      API_KEY: ${API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,7 +117,7 @@ services:
       PUID: ${PUID}
       PGID: ${PGID}
       SCRAPER_API: http://scraper_api:8000  # <-- FIXAT! Inte gluetun längre
-      API_KEY: ${API_KEY:-changeme}
+      API_KEY: ${API_KEY}
     depends_on:
       - api
     networks:
@@ -155,10 +155,10 @@ services:
       DB_USER: scraper
       DB_PASSWORD: scraper_password
       DISCORD_WEBHOOK_FILE: /run/secrets/discord_webhook
-      CHECK_INTERVAL: ${ALERT_CHECK_INTERVAL:-1800}
-      MIN_DROP_PERCENT: ${MIN_DROP_PERCENT:-5}
-      MIN_DROP_AMOUNT: ${MIN_DROP_AMOUNT:-100}
-      COOLDOWN_HOURS: ${COOLDOWN_HOURS:-24}
+      CHECK_INTERVAL: ${ALERT_CHECK_INTERVAL}
+      MIN_DROP_PERCENT: ${MIN_DROP_PERCENT}
+      MIN_DROP_AMOUNT: ${MIN_DROP_AMOUNT}
+      COOLDOWN_HOURS: ${COOLDOWN_HOURS}
     secrets:
       - discord_webhook
     depends_on:
