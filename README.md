@@ -1,6 +1,3 @@
-Här är en helt ny, uppdaterad README.md som ersätter din nuvarande:
-
-```markdown
 # 🕷️ Web Scraper Platform
 
 [![Build and Push Images](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml)
