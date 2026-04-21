@@ -133,8 +133,6 @@ services:
     volumes:
       - ${DOCKER}/scraper:/data
       - ${DOCKER}/scraper/logs:/logs
-    ports:
-      - "5001:5001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 60s
@@ -146,6 +144,8 @@ services:
         max-size: "10m"
         max-file: "3"
     network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
 
   api:
     image: ghcr.io/blixten85/scraper-api:latest
@@ -160,6 +160,8 @@ services:
       - ${DOCKER}/scraper:/data:ro
     ports:
       - "${API_PORT:-8000}:8000"
+    networks:
+      - scraper_net
     depends_on:
       scraper:
         condition: service_healthy
@@ -183,11 +185,13 @@ services:
       - no-new-privileges:true
     environment:
       DB_FILE: /data/products.db
-      SCRAPER_API: http://scraper_engine:5001
+      SCRAPER_API: http://gluetun:5001   # <-- VIKTIGT! Använd gluetun!
     volumes:
       - ${DOCKER}/scraper:/data:ro
     ports:
       - "${WEBUI_PORT:-3000}:3000"
+    networks:
+      - scraper_net
     depends_on:
       - scraper
       - api
@@ -221,6 +225,8 @@ services:
       - ${DOCKER}/scraper/logs:/logs
     secrets:
       - discord_webhook
+    networks:
+      - scraper_net
     depends_on:
       scraper:
         condition: service_healthy
@@ -229,6 +235,11 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  scraper_net:
+    driver: bridge
+    name: scraper_net
 
 secrets:
   discord_webhook:
