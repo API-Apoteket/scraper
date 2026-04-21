@@ -17,18 +17,18 @@ Lättviktig, konfigurerbar web scraping-plattform med WebUI, API och prisbevakni
 
 ## 🚀 Snabbstart - Docker (Full plattform)
 
-git clone https://github.com/blixten85/scraper.git
+```git clone https://github.com/blixten85/scraper.git
 cd scraper
 mkdir -p secrets data logs
 echo "din-discord-webhook-url" > secrets/discord_webhook.txt
-docker compose up -d
+docker compose up -d```
 
-Öppna sedan: http://localhost:3000
+Öppna sedan: ```http://localhost:3000```
 
 ## 🚀 Snabbstart - Enkel Python-scraper (bara .txt)
 
-pip install playwright
-playwright install chromium
+```pip install playwright
+playwright install chromium```
 
 Redigera simple_scraper.py och ändra URL:en:
 CONFIG = {
@@ -38,7 +38,7 @@ CONFIG = {
 }
 
 Kör:
-python simple_scraper.py
+```python simple_scraper.py```
 
 Färdiga konfigurationer:
 - Inet.se: product_selector="a[href*='/produkt/']", price_selector="text=/\d[\d\s]*\s*kr/"
@@ -47,27 +47,27 @@ Färdiga konfigurationer:
 
 ## 📦 Tjänster (Docker)
 
-scraper_engine (port 5001) - Huvudmotor - skrapar sajter
-scraper_api (port 8000) - REST API + Swagger docs
-scraper_webui (port 3000) - Webbgränssnitt
-scraper_alerts - Discord-notiser
+```scraper_engine``` (port 5001) - Huvudmotor - skrapar sajter
+```scraper_api``` (port 8000) - REST API + Swagger docs
+```scraper_webui``` (port 3000) - Webbgränssnitt
+```scraper_alerts``` - Discord-notiser
 
 ## 📡 API Exempel
 
-curl http://localhost:8000/products
-curl "http://localhost:8000/products?search=RTX"
-curl http://localhost:8000/deals?min_drop_percent=10
-curl http://localhost:8000/export/csv > produkter.csv
+```curl http://localhost:8000/products```
+```curl "http://localhost:8000/products?search=RTX"```
+```curl http://localhost:8000/deals?min_drop_percent=10```
+```curl http://localhost:8000/export/csv > produkter.csv```
 
 API-dokumentation: http://localhost:8000/docs
 
 ## 🔧 Konfiguration (.env)
 
-WEBUI_PORT=3000
+```WEBUI_PORT=3000
 API_PORT=8000
 CONCURRENT_PAGES=3
 SCRAPE_INTERVAL=3600
-MIN_DROP_PERCENT=5
+MIN_DROP_PERCENT=5```
 
 ## 📝 Licens
 
