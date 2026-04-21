@@ -1,44 +1,38 @@
-# Inet.se Price Tracker
+# 🕷️ Web Scraper Platform
 
 [![Build and Push Images](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Komplett prisbevakningssystem för Inet.se med scraping, databas, API och Discord-notifieringar.
+**Lättviktig, konfigurerbar web scraping-plattform med WebUI, API och prisbevakning.**
 
 ## ✨ Funktioner
 
-- 🔍 **Automatisk scraping** - Skannar alla produktkategorier på Inet.se
-- 💾 **SQLite-databas** - Lagrar produkter och komplett prishistorik
-- 📉 **Prisbevakning** - Upptäcker prisfall och skickar Discord-notiser
-- 🚀 **REST API** - Hämta data och statistik via HTTP
-- 🐳 **Docker** - Enkel deployment med docker-compose
-- 🔄 **CI/CD** - Automatiska byggen via GitHub Actions
-- 📊 **Metrics** - Detaljerad statistik och övervakning
+| Funktion | Beskrivning |
+|----------|-------------|
+| 🔍 **Multi-site scraping** | Skrapa valfri e-handelssida med CSS-selektorer |
+| 🎨 **WebUI** | Konfigurera och övervaka via webbgränssnitt (port 3000) |
+| 📡 **REST API** | Hämta data programmatiskt (port 8000) |
+| 🔔 **Prisbevakning** | Discord-notiser vid prisfall |
+| 💾 **SQLite** | Enkel, filbaserad databas - ingen extra infrastruktur |
+| 🐳 **Docker** | Kör allt med en docker compose up |
+| 🏷️ **Generisk** | Fungerar med Inet.se, Komplett, Webhallen, m.fl. |
 
 ## 🚀 Snabbstart
-
-### Förutsättningar
-- Docker och Docker Compose
-- Git (valfritt)
-- Discord Webhook URL (för notiser)
-
-### Installation
 
 ```bash
 # 1. Klona repot
 git clone https://github.com/blixten85/scraper.git
 cd scraper
 
-# 2. Skapa miljövariabler
-cp .env.example .env
-nano .env  # Redigera med din Discord Webhook
+# 2. Skapa secrets-mapp och Discord webhook
+mkdir -p secrets
+echo "din-discord-webhook-url" > secrets/discord_webhook.txt
 
-# 3. Skapa datamappar
-mkdir -p data/scraper/data data/scraper/logs
+# 3. Skapa data-mappar
+mkdir -p data logs
 
-# 4. Starta tjänsterna
-docker-compose up -d
+# 4. Starta
+docker compose up -d
 
-# 5. Kolla status
-docker-compose ps
-docker-compose logs -f scraper
+# 5. Öppna WebUI
+# http://localhost:3000
