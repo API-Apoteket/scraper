@@ -1,0 +1,9 @@
+name: WebUI Build
+on:
+  push:
+    paths:
+      - 'webui/**'
+      - '!**.md'
+  pull_request:
+    paths:
+      - 'webui/**'

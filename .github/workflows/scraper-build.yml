@@ -1,0 +1,9 @@
+name: Scraper Build
+on:
+  push:
+    paths:
+      - 'scraper/**'
+      - '!**.md'
+  pull_request:
+    paths:
+      - 'scraper/**'

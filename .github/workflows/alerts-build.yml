@@ -1,0 +1,9 @@
+name: Alerts Build
+on:
+  push:
+    paths:
+      - 'alerts/**'
+      - '!**.md'
+  pull_request:
+    paths:
+      - 'alerts/**'

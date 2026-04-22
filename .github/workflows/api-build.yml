@@ -1,0 +1,9 @@
+name: API Build
+on:
+  push:
+    paths:
+      - 'api/**'
+      - '!**.md'
+  pull_request:
+    paths:
+      - 'api/**'
