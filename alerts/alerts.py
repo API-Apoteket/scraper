@@ -137,7 +137,7 @@ async def check_drops():
             drop_amount = row['old_price'] - row['new_price']
             drop_percent = (drop_amount / row['old_price']) * 100
             
-            if drop_percent < MIN_DROP_PERCENT and drop_amount < MIN_DROP_AMOUNT:
+            if drop_percent < MIN_DROP_PERCENT or drop_amount < MIN_DROP_AMOUNT:
                 continue
             
             cur.execute("""
