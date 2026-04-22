@@ -161,7 +161,6 @@ services:
       DB_NAME: scraper
       DB_USER: scraper
       DB_PASSWORD_FILE: /run/secrets/scraper_password
-      DISCORD_WEBHOOK_FILE: /run/secrets/discord_webhook
       CHECK_INTERVAL: ${ALERT_CHECK_INTERVAL}
       MIN_DROP_PERCENT: ${MIN_DROP_PERCENT}
       MIN_DROP_AMOUNT: ${MIN_DROP_AMOUNT}

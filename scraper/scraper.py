@@ -214,7 +214,8 @@ async def extract_product(page, element, config):
         url = urljoin(config['base_url'], link)
         
         return {'url': url, 'title': title, 'price': price, 'site_config_id': config['id']}
-    except:
+    except Exception as e:
+        logger.debug(f"Extraheringsfel: {e}")
         return None
 
 
@@ -299,15 +300,22 @@ async def flush_buffer():
     cur = conn.cursor()
     now = datetime.datetime.now()
     
+    # === BATCH: Hämta alla kända priser i ett anrop ===
+    known_urls_list = [p[0]['url'] for p in buffer_copy if p[1]]
+    current_prices = {}
+    
+    if known_urls_list:
+        cur.execute("""
+            SELECT url, current_price 
+            FROM products 
+            WHERE url = ANY(%s::text[])
+        """, (known_urls_list,))
+        for row in cur.fetchall():
+            current_prices[row[0]] = row[1]
+    
     for product, was_known in buffer_copy:
         try:
-            # Hämta nuvarande pris om produkten finns
-            current_price = None
-            if was_known:
-                cur.execute("SELECT current_price FROM products WHERE url = %s", (product['url'],))
-                row = cur.fetchone()
-                if row:
-                    current_price = row[0]
+            current_price = current_prices.get(product['url']) if was_known else None
             
             # Skippa om priset är oförändrat
             if current_price == product['price']:
@@ -326,7 +334,6 @@ async def flush_buffer():
             
             product_id = cur.fetchone()[0]
             
-            # Spara i prishistorik ENDAST om priset ändrats
             cur.execute("""
                 INSERT INTO price_history (product_id, price, timestamp)
                 VALUES (%s, %s, %s)
