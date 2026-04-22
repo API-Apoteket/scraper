@@ -4,10 +4,8 @@ WORKDIR /app
 
 RUN mkdir -p /logs && chmod 777 /logs
 
-# Installera Chromium
-RUN python -m playwright install chromium
-
-# VIKTIGT: Symlink så Playwright hittar cachen
+# INGEN playwright install - den finns redan i bas-imagen!
+# Skapa bara symlinken
 RUN ln -sf /ms-playwright /root/.cache/ms-playwright 2>/dev/null || true
 
 COPY requirements.txt .
