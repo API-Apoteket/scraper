@@ -246,7 +246,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 | | |
 |--|--|
-| **Version** | 1.0.0 |
+| **Version** | 1.0.1 |
 | **Status** | ✅ Production Ready |
 | **Last Updated** | 2026-04-22 |
 
