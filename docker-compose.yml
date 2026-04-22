@@ -44,6 +44,7 @@ services:
       HEADLESS: ${HEADLESS}
       SCRAPE_INTERVAL: ${SCRAPE_INTERVAL}
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      PROXY_URL: ${PROXY_URL}  # <- LÄGG TILL DENNA
     volumes:
       - ${DOCKER}/scraper/logs:/logs
       - ${DOCKER}/scraper/playwright-cache:/ms-playwright

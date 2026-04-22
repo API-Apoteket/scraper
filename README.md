@@ -168,10 +168,29 @@ ALERT_CHECK_INTERVAL=1800
 MIN_DROP_PERCENT=5
 MIN_DROP_AMOUNT=100
 COOLDOWN_HOURS=24
+
+# =========================
+# PROXY (valfritt)
+# =========================
+# Format: http://user:pass@proxy-ip:port
+PROXY_URL=
+# Utan auth
+#PROXY_URL=http://proxy.example.com:8080
+
+# Med auth
+#PROXY_URL=http://username:password@proxy.example.com:8080
 ```
 
 ---
 
+📋 Om du använder proxy-tjänster:
+
+Tjänst Format
+BrightData http://user-country-ignore:pass@zproxy.lum-superproxy.io:22225
+IPRoyal http://username:password@geo.iproyal.com:12321
+Proxy-Cheap http://user:pass@proxy.example.com:3128
+
+---
 🛠️ Felsökning
 
 Postgres startar inte
