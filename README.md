@@ -1,122 +1,129 @@
+---
+
+📁 README.md (English version)
+
+```markdown
 # 🕷️ Web Scraper Platform
 
 [![Build and Push Images](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/docker-build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/blixten85/scraper?style=social)](https://github.com/blixten85/scraper)
 
-**Produktionsredo web scraping-plattform med PostgreSQL, WebUI, REST API och prisbevakning.**
-
----
-
-## ✨ Funktioner
-
-| Funktion | Beskrivning |
-|----------|-------------|
-| 🔍 **Multi-site scraping** | Skrapa valfri e-handelssida med CSS-selektorer |
-| 🎨 **WebUI** | Konfigurera och övervaka via webbgränssnitt |
-| 📡 **REST API** | Hämta data programmatiskt med API-nyckel |
-| 🔔 **Prisbevakning** | Discord-notiser vid prisfall |
-| 🐘 **PostgreSQL** | Robust databas för produktion |
-| 🐳 **Docker** | Kör allt med en docker compose up |
-| 🔒 **Säkerhet** | API-autentisering, secrets, no-new-privileges |
+**Production-ready web scraping platform with PostgreSQL, WebUI, REST API, and price monitoring.**
 
 ---
 
-## 🚀 Snabbstart - Docker (Full plattform)
+## ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| 🔍 **Multi-site scraping** | Scrape any e-commerce site with CSS selectors |
+| 🎨 **WebUI** | Configure and monitor via web interface |
+| 📡 **REST API** | Programmatic data access with API key authentication |
+| 🔔 **Price alerts** | Discord notifications for price drops |
+| 🐘 **PostgreSQL** | Production-grade database |
+| 🐳 **Docker** | Run everything with a single docker compose up |
+| 🔒 **Security** | API authentication, secrets, no-new-privileges |
+| 🌐 **Proxy support** | Optional HTTP/HTTPS proxy for anti-bot protection |
+
+---
+
+## 🚀 Quick Start - Docker (Full Platform)
 
 ```bash
-# 1. Klona repot
+# 1. Clone the repository
 git clone https://github.com/blixten85/scraper.git
 cd scraper
 
-# 2. Skapa .env-fil med dina inställningar
+# 2. Create .env file with your settings
 cp .env.example .env
 nano .env
 
-# 3. Skapa mappar och sätt rättigheter
+# 3. Create directories and set permissions
 mkdir -p ${DOCKER}/scraper/{logs,postgres,playwright-cache}
 sudo chown -R 999:999 ${DOCKER}/scraper/postgres
 
-# 4. Skapa Discord webhook (valfritt)
-echo "din-discord-webhook-url" > ${CONFIG}/.secrets/discord_webhook
+# 4. Create Discord webhook (optional)
+echo "your-discord-webhook-url" > ${CONFIG}/.secrets/discord_webhook
 
-# 5. Starta
+# 5. Start the platform
 docker compose up -d
 
-# 6. Öppna WebUI
+# 6. Open WebUI
 # http://localhost:3000
 ```
 
 ---
 
-📦 Tjänster (Docker)
+📦 Services (Docker)
 
-Tjänst Port Beskrivning
-| `scraper_db` 5432 (intern) PostgreSQL-databas
-| `scraper_engine` 5001 (intern) Huvudmotor - skrapar sajter
-| `scraper_api` 8000 REST API + Swagger docs
-| `scraper_webui` 3000 Webbgränssnitt
-| `scraper_alerts` - Discord-notiser
+Service Port Description
+scraper_db 5432 (internal) PostgreSQL database
+scraper_engine 5001 (internal) Main engine - scrapes sites
+scraper_api 8000 REST API + Swagger docs
+scraper_webui 3000 Web interface
+scraper_alerts - Discord notifications
 
 ---
 
-🔐 Generera API-nyckel och lösenord
+🔐 Generate API Key and Passwords
 
-API-nyckel
+API Key
 
 ```bash
-# Generera en slumpmässig API-nyckel
+# Generate a random API key
 openssl rand -base64 48
 ```
 
-Databaslösenord
+Database Password
 
 ```bash
-# Generera ett säkert lösenord
+# Generate a secure password
 openssl rand -hex 16
 ```
 
 Discord Webhook
 
-1. Gå till din Discord-server → Kanalkugghjul → Integrationer → Webhooks
-2. Skapa ny webhook och kopiera URL:en
-3. Spara: echo "url" > ${CONFIG}/.secrets/discord_webhook
+1. Go to your Discord server → Channel settings → Integrations → Webhooks
+2. Create new webhook and copy the URL
+3. Save it: echo "url" > ${CONFIG}/.secrets/discord_webhook
 
 ---
 
-📡 API Exempel
+📡 API Examples
 
-OBS: API:et kräver X-API-Key header för alla endpoints utom /health och /docs.
+Note: API requires X-API-Key header for all endpoints except /health and /docs.
 
 ```bash
-# Hämta alla produkter
+# Get all products
 curl -H "X-API-Key: ${API_KEY}" http://localhost:8000/products
 
-# Sök produkter
+# Search products
 curl -H "X-API-Key: ${API_KEY}" "http://localhost:8000/products?search=RTX"
 
-# Hämta prisfall
+# Get price drops
 curl -H "X-API-Key: ${API_KEY}" "http://localhost:8000/deals?min_drop_percent=10"
 
-# Exportera till CSV
-curl -H "X-API-Key: ${API_KEY}" http://localhost:8000/export/csv > produkter.csv
+# Export to CSV
+curl -H "X-API-Key: ${API_KEY}" http://localhost:8000/export/csv > products.csv
 ```
 
-API-dokumentation: http://localhost:8000/docs
+API Documentation: http://localhost:8000/docs
 
 ---
 
-🔧 Konfiguration (.env)
+🔧 Configuration (.env)
 
 ```bash
 # =========================
-# SÖKVÄGAR
+# PATHS
 # =========================
 DOCKER=/path/to/docker/data
 CONFIG=/path/to/config
 DOMAIN=example.com
 
 # =========================
-# ANVÄNDARE
+# USER
 # =========================
 PUID=1000
 PGID=1000
@@ -138,54 +145,48 @@ MIN_DROP_AMOUNT=100
 COOLDOWN_HOURS=24
 
 # =========================
-# PROXY (valfritt)
+# PROXY (optional)
 # =========================
 # Format: http://user:pass@proxy-ip:port
 PROXY_URL=
-# Utan auth
-#PROXY_URL=http://proxy.example.com:8080
-
-# Med auth
-#PROXY_URL=http://username:password@proxy.example.com:8080
 ```
 
----
+Proxy Service Examples
 
-📋 Om du använder proxy-tjänster:
-
-Tjänst Format
+Service Format
 BrightData http://user-country-ignore:pass@zproxy.lum-superproxy.io:22225
 IPRoyal http://username:password@geo.iproyal.com:12321
 Proxy-Cheap http://user:pass@proxy.example.com:3128
 
 ---
-🛠️ Felsökning
 
-Postgres startar inte
+🛠️ Troubleshooting
+
+Postgres won't start
 
 ```bash
-# Kontrollera rättigheter
+# Check permissions
 sudo chown -R 999:999 ${DOCKER}/scraper/postgres
 ```
 
-API:et svarar med 401 Unauthorized
+API returns 401 Unauthorized
 
 ```bash
-# Kontrollera att du skickar med rätt header
+# Verify you're sending the correct header
 curl -H "X-API-Key: ${API_KEY}" http://localhost:8000/products
 ```
 
-Inga produkter skrapas
+No products are scraped
 
 ```bash
-# Testa selektorerna via WebUI (Testa-knappen)
-# eller kolla loggarna:
+# Test selectors via WebUI (Test button)
+# Or check the logs:
 docker logs scraper_engine --tail 50
 ```
 
 ---
 
-📁 Databasstruktur
+📁 Database Schema
 
 ```sql
 products (
@@ -219,8 +220,133 @@ scraper_config (
 ```
 
 ---
-📝 Licens
 
-MIT - se [LICENSE](./LICENSE)
+🐛 Bugs and Feature Requests
+
+Found a bug or want to suggest a feature?
+
+· Bugs: Create an issue
+· Feature requests: Create an issue
+· Discussions: Start a discussion
+
 ---
-Skapad av blixten85 🚀
+
+🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the repo
+2. Create a feature branch (git checkout -b feature/AmazingFeature)
+3. Commit your changes (git commit -m 'Add some AmazingFeature')
+4. Push to the branch (git push origin feature/AmazingFeature)
+5. Open a Pull Request
+
+---
+
+📊 Project Status
+
+ 
+Version 1.0.0
+Status ✅ Production Ready
+Last Updated 2026-04-22
+Build https://github.com/blixten85/scraper/actions/workflows/docker-build.yml/badge.svg
+Issues https://img.shields.io/github/issues/blixten85/scraper
+Pull Requests https://img.shields.io/github/issues-pr/blixten85/scraper
+
+---
+
+⭐ Support the Project
+
+If you like this project, give it a ⭐ on GitHub!
+
+---
+
+📝 License
+
+MIT - see LICENSE
+
+---
+
+Created by blixten85 🚀
+
+```
+
+---
+
+## 📁 **.github/ISSUE_TEMPLATE/bug_report.md**
+
+```markdown
+---
+name: 🐛 Bug Report
+about: Report a bug
+title: "[BUG] "
+labels: bug
+assignees: ''
+---
+
+## 🐛 Description
+A clear description of the bug.
+
+## 🔄 Steps to Reproduce
+1. Go to '...'
+2. Click on '....'
+3. See error
+
+## ✅ Expected Behavior
+What should happen.
+
+## 📸 Screenshots
+If applicable, add screenshots.
+
+## 🖥️ Environment
+- OS: [e.g. Ubuntu 24.04]
+- Docker version: [e.g. 24.0.7]
+- Version: [e.g. v1.0.0]
+
+## 📋 Logs
+```bash
+# Paste relevant logs here
+```
+
+```
+
+---
+
+## 📁 **.github/ISSUE_TEMPLATE/feature_request.md**
+
+```markdown
+---
+name: 💡 Feature Request
+about: Suggest a new feature
+title: "[FEATURE] "
+labels: enhancement
+assignees: ''
+---
+
+## 💡 Description
+A clear description of the feature you'd like.
+
+## 🤔 Problem This Solves
+What problem does this feature solve?
+
+## 🎯 Use Case
+How would you use this feature?
+
+## 📋 Alternatives
+Have you considered any alternatives?
+
+## 📸 Mockups
+If applicable, add sketches or mockups.
+```
+
+---
+
+🚀 Ladda ner och använd:
+
+Kopiera innehållet ovan och spara som:
+
+· README.md
+· .github/ISSUE_TEMPLATE/bug_report.md
+· .github/ISSUE_TEMPLATE/feature_request.md
+
+Klart! 🎯
