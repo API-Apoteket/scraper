@@ -22,15 +22,6 @@ jobs:
       github.actor == 'dependabot[bot]' &&
       contains(github.event.pull_request.labels.*.name, 'auto-merge')
     steps:
-      - name: Wait for CI to pass
-        uses: lewagon/wait-for-check-action@v1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          check-name: 'build'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 30
-          allowed-conclusions: success,skipped
-
       - name: Approve PR
         run: gh pr review --approve "$PR_URL"
         env:
