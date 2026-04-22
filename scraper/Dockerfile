@@ -4,12 +4,12 @@ WORKDIR /app
 
 RUN mkdir -p /logs && chmod 777 /logs
 
-# INGEN playwright install - den finns redan i bas-imagen!
-# Skapa bara symlinken
+# Symlink för cache
 RUN ln -sf /ms-playwright /root/.cache/ms-playwright 2>/dev/null || true
 
+# VIKTIGT: Installera Python-paket FRÅN requirements.txt
 COPY requirements.txt .
-RUN pip install --no-cache-dir flask==3.0.0 flask-cors==4.0.0 psycopg2-binary==2.9.9
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY scraper.py .
 
