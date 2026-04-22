@@ -31,13 +31,10 @@ services:
     container_name: scraper_engine
     restart: unless-stopped
     pull_policy: always
-    user: "${PUID}:${PGID}"
     security_opt:
       - no-new-privileges:true
     environment:
       TZ: ${TZ}
-      PUID: ${PUID}
-      PGID: ${PGID}
       DB_HOST: postgres
       DB_NAME: scraper
       DB_USER: scraper
@@ -45,10 +42,10 @@ services:
       CONCURRENT_PAGES: ${CONCURRENT_PAGES}
       HEADLESS: ${HEADLESS}
       SCRAPE_INTERVAL: ${SCRAPE_INTERVAL}
-      PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     volumes:
       - ${DOCKER}/scraper/logs:/logs
-      - ${DOCKER}/scraper/playwright-cache:/root/.cache/ms-playwright
+      - ${DOCKER}/scraper/playwright-cache:/ms-playwright
     secrets:
       - scraper_password
     depends_on:
@@ -103,11 +100,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    labels:
-      swag: "enable"
-      swag_address: "scraper_api"
-      swag_port: "8000"
-      swag_url: "api.scraper.${DOMAIN}"
 
   webui:
     image: ghcr.io/blixten85/scraper-webui:latest
@@ -139,11 +131,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    labels:
-      swag: "enable"
-      swag_address: "scraper_webui"
-      swag_port: "3000"
-      swag_url: "scraper.${DOMAIN}"
 
   alerts:
     image: ghcr.io/blixten85/scraper-alerts:latest
