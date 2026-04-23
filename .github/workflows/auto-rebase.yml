@@ -1,5 +1,5 @@
 # .github/workflows/auto-rebase.yml
-name: Auto-Rebase
+name: Auto-Rebase Dependabot PRs
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Find open PRs
+      - name: Find open Dependabot PRs
         id: find-prs
         uses: actions/github-script@v7
         with:
@@ -31,11 +31,15 @@ jobs:
               repo: context.repo.repo,
               state: 'open'
             });
-            
-            const rebaseable = prs.filter(pr => 
-              pr.labels.some(label => label.name === 'auto-rebase' || label.name === 'auto-merge')
-            ).map(pr => pr.number);
-            
+
+            const rebaseable = prs
+              .filter(pr =>
+                pr.user.login === 'dependabot[bot]' &&
+                pr.labels.some(l => l.name === 'auto-merge' || l.name === 'auto-rebase')
+              )
+              .map(pr => pr.number);
+
+            console.log(`Found ${rebaseable.length} PR(s) to rebase`);
             return rebaseable;
 
       - name: Rebase PRs
@@ -43,7 +47,7 @@ jobs:
         with:
           script: |
             const prNumbers = ${{ steps.find-prs.outputs.result }};
-            
+
             for (const prNumber of prNumbers) {
               try {
                 await github.rest.pulls.updateBranch({
@@ -51,7 +55,7 @@ jobs:
                   repo: context.repo.repo,
                   pull_number: prNumber
                 });
-                console.log(`✅ Rebases PR #${prNumber}`);
+                console.log(`✅ Rebased PR #${prNumber}`);
               } catch (error) {
                 console.log(`⚠️ Could not rebase PR #${prNumber}: ${error.message}`);
               }

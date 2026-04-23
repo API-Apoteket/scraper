@@ -1,8 +1,17 @@
 # .github/dependabot.yml
+# Senast uppdaterad: 2026-04-23
 version: 2
+
+registries:
+  ghcr:
+    type: docker-registry
+    url: https://ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GHCR_TOKEN }}
+
 updates:
   # ============================================
-  # DOCKER - Alla uppdateringar i EN PR (veckovis)
+  # DOCKER - Veckovis (måndag 09:00 Stockholm)
   # ============================================
   - package-ecosystem: "docker"
     directories:
@@ -10,12 +19,20 @@ updates:
       - "/api"
       - "/webui"
       - "/alerts"
+    registries:
+      - ghcr
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+    allow:
+      - dependency-type: "direct"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "docker"
       include: "scope"
@@ -24,44 +41,13 @@ updates:
       - "docker"
       - "auto-merge"
     groups:
-      all-docker:
-        patterns:
-          - "*"
-    # Skapa separata PR för säkerhetsuppdateringar
-    target-branch: "main"
-
-  # ============================================
-  # DOCKER - Säkerhetsuppdateringar (dagligen)
-  # ============================================
-  - package-ecosystem: "docker"
-    directories:
-      - "/scraper"
-      - "/api"
-      - "/webui"
-      - "/alerts"
-    schedule:
-      interval: "daily"
-      time: "06:00"
-      timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "security"
-      include: "scope"
-    labels:
-      - "security"
-      - "docker"
-      - "auto-merge"
-      - "critical"
-    # Endast säkerhetsuppdateringar
-    groups:
-      docker-security:
-        applies-to: security-updates
+      docker-updates:
         patterns:
           - "*"
     target-branch: "main"
 
   # ============================================
-  # PYTHON/PIP - Alla uppdateringar i EN PR (veckovis)
+  # PYTHON/PIP - Veckovis (måndag 09:00 Stockholm)
   # ============================================
   - package-ecosystem: "pip"
     directories:
@@ -74,8 +60,16 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 1
-    versioning-strategy: increase-if-necessary
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+    versioning-strategy: "increase-if-necessary"
+    allow:
+      - dependency-type: "direct"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "playwright"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     commit-message:
       prefix: "pip"
       include: "scope"
@@ -84,80 +78,36 @@ updates:
       - "python"
       - "auto-merge"
     groups:
-      all-python:
-        patterns:
-          - "*"
-    ignore:
-      - dependency-name: "playwright"
-        versions: [">=1.41.0"]
-    # Auto-merge endast utvecklingsberoenden (säkrare approach)
-    # Kommentera ut raderna nedan om du vill auto-merga ALLA Python-uppdateringar
-    # allow:
-    #   - dependency-type: "development"
-    target-branch: "main"
-
-  # ============================================
-  # PYTHON/PIP - Säkerhetsuppdateringar (dagligen)
-  # ============================================
-  - package-ecosystem: "pip"
-    directories:
-      - "/scraper"
-      - "/api"
-      - "/webui"
-      - "/alerts"
-    schedule:
-      interval: "daily"
-      time: "06:00"
-      timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 10
-    versioning-strategy: increase-if-necessary
-    commit-message:
-      prefix: "security"
-      include: "scope"
-    labels:
-      - "security"
-      - "python"
-      - "auto-merge"
-      - "critical"
-    # Endast säkerhetsuppdateringar
-    groups:
-      python-security:
-        applies-to: security-updates
+      python-updates:
         patterns:
           - "*"
     target-branch: "main"
 
   # ============================================
-  # GITHUB ACTIONS - Månadsvis
+  # GITHUB ACTIONS - Veckovis (supply chain)
   # ============================================
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
+    rebase-strategy: "auto"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "ci"
       include: "scope"
     labels:
       - "dependencies"
-      - "ci"
       - "github-actions"
+      - "ci"
       - "auto-merge"
     groups:
-      all-actions:
+      actions-updates:
         patterns:
           - "*"
     target-branch: "main"
-
-# ============================================
-# REGISTER INFO (valfritt men rekommenderat)
-# ============================================
-registries:
-  docker-hub:
-    type: docker-registry
-    url: https://registry.hub.docker.com
-    username: ${{ secrets.DOCKERHUB_USERNAME }}
-    password: ${{ secrets.DOCKERHUB_TOKEN }}
