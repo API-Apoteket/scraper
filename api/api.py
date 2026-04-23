@@ -9,7 +9,7 @@ import logging
 import sys
 import csv
 from io import StringIO
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
