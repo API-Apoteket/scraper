@@ -8,21 +8,9 @@ updates:
       - "/alerts"
     schedule:
       interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "docker"
     labels:
       - "dependencies"
-      - "docker"
       - "auto-merge"
-    groups:
-      docker-updates:
-        patterns:
-          - "*"
-    target-branch: "main"
 
   - package-ecosystem: "pip"
     directories:
@@ -32,48 +20,14 @@ updates:
       - "/alerts"
     schedule:
       interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "pip"
     labels:
       - "dependencies"
-      - "python"
       - "auto-merge"
-    groups:
-      python-updates:
-        patterns:
-          - "*"
-    ignore:
-      - dependency-name: "playwright"
-        versions: [">=1.41.0"]
-    target-branch: "main"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 1
-    commit-message:
-      prefix: "ci"
     labels:
       - "dependencies"
-      - "ci"
       - "auto-merge"
-    groups:
-      actions-updates:
-        patterns:
-          - "*"
-    target-branch: "main"
-
-registries:
-  docker-hub:
-    type: docker-registry
-    url: https://registry.hub.docker.com
-    username: ${{ secrets.DOCKERHUB_USERNAME }}
-    password: ${{ secrets.DOCKERHUB_TOKEN }}
