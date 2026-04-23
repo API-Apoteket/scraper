@@ -24,6 +24,12 @@ jobs:
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "Commit: $COMMIT_MSG"
 
+          # Skippa merge-commits
+          if echo "$COMMIT_MSG" | grep -qE "^Merge"; then
+            echo "⏭️ Skipping merge commit – no validation needed"
+            exit 0
+          fi
+
           if echo "$COMMIT_MSG" | grep -qE "^(feat|fix|docker|pip|ci|docs|chore|refactor|test|perf)(\(.+\))?: .+"; then
             echo "✅ Commit message follows conventional commits"
           else
