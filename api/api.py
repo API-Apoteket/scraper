@@ -97,8 +97,9 @@ def health():
         cur.execute("SELECT 1")
         return_db(conn)
         return {"status": "healthy", "database": "connected", "timestamp": datetime.utcnow().isoformat()}
-    except Exception as e:
-        return {"status": "unhealthy", "error": str(e)}
+    except Exception:
+        logging.exception("Health check failed")
+        return {"status": "unhealthy", "error": "Internal server error"}
 
 @app.get("/products")
 def get_products(limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0), search: Optional[str] = Query(None)):
