@@ -1,9 +1,17 @@
 # .github/dependabot.yml
 # Senast uppdaterad: 2026-04-23
 version: 2
+
+registries:
+  ghcr:
+    type: docker-registry
+    url: https://ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GHCR_TOKEN }}
+
 updates:
   # ============================================
-  # DOCKER - Alla uppdateringar (veckovis)
+  # DOCKER - Veckovis (måndag 09:00 Stockholm)
   # ============================================
   - package-ecosystem: "docker"
     directories:
@@ -11,12 +19,20 @@ updates:
       - "/api"
       - "/webui"
       - "/alerts"
+    registries:
+      - docker-hub
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+    allow:
+      - dependency-type: "direct"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "docker"
       include: "scope"
@@ -31,7 +47,7 @@ updates:
     target-branch: "main"
 
   # ============================================
-  # PYTHON/PIP - Alla uppdateringar (veckovis)
+  # PYTHON/PIP - Veckovis (måndag 09:00 Stockholm)
   # ============================================
   - package-ecosystem: "pip"
     directories:
@@ -44,8 +60,16 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 10
-    versioning-strategy: increase-if-necessary
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+    versioning-strategy: "increase-if-necessary"
+    allow:
+      - dependency-type: "direct"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "playwright"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     commit-message:
       prefix: "pip"
       include: "scope"
@@ -57,22 +81,23 @@ updates:
       python-updates:
         patterns:
           - "*"
-    ignore:
-      - dependency-name: "playwright"
-        versions: ["< 1.41.0"]
     target-branch: "main"
 
   # ============================================
-  # GITHUB ACTIONS - Månadsvis
+  # GITHUB ACTIONS - Veckovis (supply chain)
   # ============================================
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    rebase-strategy: "auto"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "ci"
       include: "scope"
@@ -86,13 +111,3 @@ updates:
         patterns:
           - "*"
     target-branch: "main"
-
-# ============================================
-# REGISTER - Docker Hub
-# ============================================
-registries:
-  docker-hub:
-    type: docker-registry
-    url: https://registry.hub.docker.com
-    username: ${{ secrets.DOCKERHUB_USERNAME }}
-    password: ${{ secrets.DOCKERHUB_TOKEN }}

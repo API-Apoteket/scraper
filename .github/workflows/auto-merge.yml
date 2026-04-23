@@ -1,3 +1,4 @@
+# .github/workflows/auto-merge.yml
 name: Dependabot Auto-Merge
 
 on:
@@ -19,22 +20,18 @@ jobs:
       github.event.pull_request.state == 'open' &&
       github.event.pull_request.draft == false
     steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check mergeability
         run: |
           MERGEABLE=$(gh pr view "$PR_URL" --json mergeable -q '.mergeable')
           MERGE_STATE=$(gh pr view "$PR_URL" --json mergeStateStatus -q '.mergeStateStatus')
-          
           echo "Merge state: $MERGE_STATE"
-          
-          if [ "$MERGE_STATE" = "BEHIND" ]; then
-            echo "⚠️ PR is behind base branch"
-            # Optional: trigger rebase
-            # gh pr comment "$PR_URL" --body "@dependabot rebase"
-          fi
-          
-          if [ "$MERGEABLE" = "MERGEABLE" ]; then
-            echo "✅ PR is mergeable"
-          elif [ "$MERGEABLE" = "CONFLICTING" ]; then
+          if [ "$MERGEABLE" = "CONFLICTING" ]; then
             echo "❌ PR has conflicts, cannot auto-merge"
             exit 1
           fi
@@ -44,7 +41,7 @@ jobs:
 
       - name: Wait for required checks
         run: |
-          echo "⏳ Waiting for status checks to complete..."
+          echo "⏳ Waiting for status checks..."
           gh pr checks "$PR_URL" --watch --interval 15 --required 2>/dev/null || true
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -55,12 +52,12 @@ jobs:
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: Enable auto-merge
         run: |
           gh pr merge --auto --delete-branch --squash "$PR_URL"
-          echo "✅ Auto-merge enabled, PR will merge once conditions are met"
+          echo "✅ Auto-merge aktiverat"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
