@@ -1,4 +1,4 @@
-# .github/dependabot.yml - FIXED VERSION
+# .github/dependabot.yml
 version: 2
 updates:
   # ============================================
@@ -15,7 +15,7 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 5  # Öka limit för att tillåta säkerhets-PRs
+    open-pull-requests-limit: 5
     commit-message:
       prefix: "docker"
       include: "scope"
@@ -47,7 +47,7 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 5  # Öka limit för säkerhets-PRs
+    open-pull-requests-limit: 5
     versioning-strategy: increase-if-necessary
     commit-message:
       prefix: "pip"
