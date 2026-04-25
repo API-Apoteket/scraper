@@ -733,11 +733,15 @@ def trigger_scrape():
         return jsonify({'status': 'error', 'message': 'Already running'}), 409
     
     def run():
+        global scraping_active
+        scraping_active = True
         try:
             asyncio.run(run_scraper())
         except Exception as e:
             logger.error(f"Scrape thread failed: {e}")
-    
+        finally:
+            scraping_active = False
+
     threading.Thread(target=run, daemon=True).start()
     return jsonify({'status': 'success'})
 
