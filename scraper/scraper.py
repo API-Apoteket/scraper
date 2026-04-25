@@ -398,16 +398,25 @@ async def scrape_site(context, config):
                     elements = await page.query_selector_all(config['product_selector'])
                     logger.info(f"  Found {len(elements)} elements")
 
-                    for elem in elements:
-                        product = await extract_product(page, elem, config)
-                        if product:
-                            was_known = product['url'] in known_urls
-                            known_urls.add(product['url'])
-                            async with write_lock:
-                                write_buffer.append((product, was_known))
-                                if len(write_buffer) >= 10:
-                                    await flush_buffer()
-                            products_found += 1
+                    async def _extract_query_elements():
+                        count = 0
+                        for elem in elements:
+                            product = await extract_product(page, elem, config)
+                            if product:
+                                was_known = product['url'] in known_urls
+                                known_urls.add(product['url'])
+                                async with write_lock:
+                                    write_buffer.append((product, was_known))
+                                    if len(write_buffer) >= 10:
+                                        await flush_buffer()
+                                count += 1
+                        return count
+
+                    try:
+                        n = await asyncio.wait_for(_extract_query_elements(), timeout=60)
+                        products_found += n
+                    except asyncio.TimeoutError:
+                        logger.warning(f"  Extraction timed out after 60s, moving on")
                 finally:
                     await page.close()
                     page = None
