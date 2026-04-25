@@ -149,11 +149,14 @@ def init_db():
     cur.execute("SELECT COUNT(*) FROM scraper_config")
     if cur.fetchone()[0] == 0:
         cur.execute("""
-        INSERT INTO scraper_config 
-        (name, base_url, product_selector, title_selector, price_selector, link_selector, max_pages)
-        VALUES 
-        ('Inet.se', 'https://www.inet.se/kategori/datorkomponenter',
-         'a[href*="/produkt/"]', '', 'text=/\\d[\\d\\s]*\\s*kr/', '', 5)
+        INSERT INTO scraper_config
+        (name, base_url, product_selector, title_selector, price_selector, link_selector,
+         pagination_type, pagination_selector, max_pages)
+        VALUES
+        ('Inet.se', 'https://www.inet.se/kategori/31/datorkomponenter',
+         'li[data-test-id^=''search_product_'']', 'h3',
+         'span[data-test-is-discounted-price]', 'a[href*=''/produkt/'']',
+         'subcategory', 'a[href*=''/kategori/'']', 999)
         """)
         cur.execute("""
         INSERT INTO scraper_config 
@@ -204,6 +207,20 @@ def extract_price(price_text, pattern=None):
             price_text = match.group(0)
     digits = re.sub(r"[^\d]", "", str(price_text))
     return int(digits) if digits else 0
+
+
+async def accept_cookies(page):
+    """Accept cookie consent dialogs — tries common button texts."""
+    for text in ['Jag förstår', 'Acceptera alla', 'Acceptera', 'Accept all', 'Accept']:
+        try:
+            btn = await page.query_selector(f"button:has-text('{text}')")
+            if btn and await btn.is_visible():
+                await btn.click()
+                await asyncio.sleep(1.5)
+                return True
+        except Exception:
+            pass
+    return False
 
 
 async def extract_product(page, element, config):
@@ -267,65 +284,140 @@ async def scrape_page_with_retry(context, url, max_retries=3):
 
 
 async def scrape_site(context, config):
-    page_num = 1
     products_found = 0
-    known_urls = set()
-    page = None
-    
-    try:
-        logger.info(f"Starting: {config['name']}")
-        url = config['base_url']
-        max_pages = config.get('max_pages', 10)
-        
-        while url and page_num <= max_pages and not shutdown_event.is_set():
-            logger.info(f"  Page {page_num}/{max_pages}: {url}")
+    cookies_done = [False]
+
+    logger.info(f"Starting: {config['name']}")
+
+    async def _cookies_once(page):
+        if not cookies_done[0]:
+            await accept_cookies(page)
+            cookies_done[0] = True
+
+    async def _infinite_scroll(page, rounds=30):
+        prev = 0
+        for _ in range(rounds):
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await asyncio.sleep(random.uniform(1.5, 2.5))
+            count = await page.evaluate(
+                f"document.querySelectorAll({json.dumps(config['product_selector'])}).length"
+            )
+            if count == prev:
+                break
+            prev = count
+
+    if config.get('pagination_type') == 'subcategory':
+        base = config['base_url'].rstrip('/')
+        visited = set()
+        queue = [base]
+        seen_product_urls = set()
+
+        while queue and not shutdown_event.is_set():
+            url = queue.pop(0)
+            if url in visited:
+                continue
+            visited.add(url)
+
+            logger.info(f"  Category: {url.split('/')[-1]}")
             page = await scrape_page_with_retry(context, url)
             if not page:
-                break
-            
-            try:
-                # Scroll until no new elements appear (handles infinite scroll)
-                prev_count = 0
-                for _ in range(15):
-                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    await asyncio.sleep(random.uniform(1.5, 2.5))
-                    elements = await page.query_selector_all(config['product_selector'])
-                    if len(elements) == prev_count:
-                        break
-                    prev_count = len(elements)
+                continue
 
-                logger.info(f"  Found {len(elements)} elements")
-                
+            try:
+                await _cookies_once(page)
+
+                # Discover subcategory links from this page
+                if config.get('pagination_selector'):
+                    try:
+                        links = await page.eval_on_selector_all(
+                            config['pagination_selector'],
+                            "els => [...new Set(els.map(e => e.href))]"
+                        )
+                        for link in links:
+                            link = link.rstrip('/')
+                            if link not in visited and link != base:
+                                queue.append(link)
+                    except Exception:
+                        pass
+
+                await _infinite_scroll(page)
+                elements = await page.query_selector_all(config['product_selector'])
+                logger.info(f"  {len(elements)} elements after scroll")
+
+                new_count = 0
                 for elem in elements:
                     product = await extract_product(page, elem, config)
-                    if product:
-                        was_known = product['url'] in known_urls
-                        known_urls.add(product['url'])
+                    if product and product['url'] not in seen_product_urls:
+                        seen_product_urls.add(product['url'])
                         async with write_lock:
-                            write_buffer.append((product, was_known))
+                            write_buffer.append((product, False))
                             if len(write_buffer) >= 10:
                                 await flush_buffer()
                         products_found += 1
+                        new_count += 1
+
+                logger.info(f"  → {new_count} new (total: {products_found})")
+            except Exception as e:
+                logger.error(f"Error scraping {url}: {e}")
+                stats['errors'] += 1
             finally:
                 await page.close()
-                page = None
-            
-            if config.get('pagination_type') == 'query':
-                separator = '&' if '?' in config['base_url'] else '?'
-                url = f"{config['base_url']}{separator}page={page_num + 1}"
-            else:
-                url = None
-            
-            page_num += 1
-            await asyncio.sleep(random.uniform(3, 7))
-        
+
+            await asyncio.sleep(random.uniform(2, 4))
+
         logger.info(f"Done with {config['name']}: {products_found} products")
-    except Exception as e:
-        logger.error(f"Error in {config['name']}: {e}")
-        stats['errors'] += 1
-    finally:
-        if page:
-            await page.close()
+
+    else:
+        page_num = 1
+        known_urls = set()
+        page = None
+
+        try:
+            url = config['base_url']
+            max_pages = config.get('max_pages', 10)
+
+            while url and page_num <= max_pages and not shutdown_event.is_set():
+                logger.info(f"  Page {page_num}/{max_pages}: {url}")
+                page = await scrape_page_with_retry(context, url)
+                if not page:
+                    break
+
+                try:
+                    await _cookies_once(page)
+                    await _infinite_scroll(page, rounds=15)
+                    elements = await page.query_selector_all(config['product_selector'])
+                    logger.info(f"  Found {len(elements)} elements")
+
+                    for elem in elements:
+                        product = await extract_product(page, elem, config)
+                        if product:
+                            was_known = product['url'] in known_urls
+                            known_urls.add(product['url'])
+                            async with write_lock:
+                                write_buffer.append((product, was_known))
+                                if len(write_buffer) >= 10:
+                                    await flush_buffer()
+                            products_found += 1
+                finally:
+                    await page.close()
+                    page = None
+
+                if config.get('pagination_type') == 'query':
+                    separator = '&' if '?' in config['base_url'] else '?'
+                    url = f"{config['base_url']}{separator}page={page_num + 1}"
+                else:
+                    url = None
+
+                page_num += 1
+                await asyncio.sleep(random.uniform(3, 7))
+
+            logger.info(f"Done with {config['name']}: {products_found} products")
+        except Exception as e:
+            logger.error(f"Error in {config['name']}: {e}")
+            stats['errors'] += 1
+        finally:
+            if page:
+                await page.close()
 
 
 async def flush_buffer():
