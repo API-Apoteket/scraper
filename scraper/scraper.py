@@ -784,6 +784,40 @@ def export_site_csv(site_name):
     )
 
 
+@app.route('/export')
+def export_all_csv():
+    """Export all products to CSV"""
+    import csv
+    from io import StringIO
+    from flask import Response
+
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT p.title, p.current_price, p.url, c.name AS site
+        FROM products p
+        JOIN scraper_config c ON p.site_config_id = c.id
+        WHERE p.current_price > 0
+        ORDER BY c.name, p.current_price ASC
+    """)
+    products = cur.fetchall()
+    return_db(conn)
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Site', 'Product', 'Price (SEK)', 'Link'])
+    for p in products:
+        writer.writerow([p['site'], p['title'], p['current_price'], p['url']])
+
+    output.seek(0)
+    filename = f"products_{datetime.datetime.now().strftime('%Y%m%d')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
 def signal_handler(signum, frame):
     logger.info(f"Signal {signum}, shutting down...")
     shutdown_event.set()

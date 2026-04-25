@@ -116,6 +116,21 @@ def get_products():
     except Exception as e:
         return jsonify({'products': [], 'total': 0})
 
+@app.route('/api/export/csv')
+def export_csv():
+    try:
+        from flask import Response
+        resp = engine_request('GET', '/export')
+        return Response(
+            resp.content,
+            status=resp.status_code,
+            mimetype='text/csv',
+            headers={'Content-Disposition': resp.headers.get('Content-Disposition', 'attachment; filename=products.csv')}
+        )
+    except Exception as e:
+        logger.error(f"Export error: {e}")
+        return jsonify({'error': 'Export failed'}), 503
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '3000'))
     app.run(host='0.0.0.0', port=port, debug=False)
