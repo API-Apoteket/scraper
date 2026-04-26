@@ -31,7 +31,6 @@ services:
     image: ghcr.io/blixten85/scraper-engine:latest
     container_name: scraper_engine
     restart: unless-stopped
-    pull_policy: always
     security_opt:
       - no-new-privileges:true
     environment:
@@ -70,7 +69,6 @@ services:
     image: ghcr.io/blixten85/scraper-api:latest
     container_name: scraper_api
     restart: unless-stopped
-    pull_policy: always
     user: "${PUID}:${PGID}"
     security_opt:
       - no-new-privileges:true
@@ -105,7 +103,6 @@ services:
     image: ghcr.io/blixten85/scraper-webui:latest
     container_name: scraper_webui
     restart: unless-stopped
-    pull_policy: always
     user: "${PUID}:${PGID}"
     security_opt:
       - no-new-privileges:true
@@ -140,7 +137,6 @@ services:
     image: ghcr.io/blixten85/scraper-alerts:latest
     container_name: scraper_alerts
     restart: unless-stopped
-    pull_policy: always
     user: "${PUID}:${PGID}"
     security_opt:
       - no-new-privileges:true
