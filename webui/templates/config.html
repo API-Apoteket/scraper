@@ -3,91 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuration - Web Scraper</title>
+    <title>Web Scraper — Configuration</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme');
+            const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-bs-theme', saved || preferred);
+        })();
+    </script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Web Scraper Pro</a>
-            <div class="navbar-nav ms-auto">
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <i class="bi bi-spider text-primary"></i> Web Scraper
+            </a>
+            <div class="d-flex align-items-center gap-2 ms-auto">
                 <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link active" href="/config">Configuration</a>
+                <a class="nav-link" href="/config">Configuration</a>
+                <button class="theme-toggle ms-1" onclick="toggleTheme()" title="Toggle theme">
+                    <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="container-fluid px-4 py-4" style="max-width: 1400px;">
+
+        <div class="page-header d-flex justify-content-between align-items-center">
             <h1>Configuration</h1>
-            <button class="btn btn-primary" onclick="showAddForm()">
-                <i class="bi bi-plus-circle"></i> Add new site
+            <button class="btn btn-primary" onclick="toggleAddForm()">
+                <i class="bi bi-plus-lg me-1"></i> Add site
             </button>
         </div>
-        
-        <!-- Add Form (hidden by default) -->
+
+        <!-- Add Form -->
         <div id="addForm" class="card mb-4" style="display: none;">
-            <div class="card-header">Add new scraper configuration</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>New scraper configuration</span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleAddForm()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
             <div class="card-body">
                 <form onsubmit="addConfig(event)">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Name</label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Name</label>
                             <input type="text" class="form-control" id="cfgName" required placeholder="e.g. Example.com">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label>URL</label>
-                            <input type="url" class="form-control" id="cfgUrl" required placeholder="https://www.example.com">
+                        <div class="col-md-6">
+                            <label class="form-label">URL</label>
+                            <input type="url" class="form-control" id="cfgUrl" required placeholder="https://www.example.com/products">
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Product container</label>
+                        <div class="col-md-6">
+                            <label class="form-label">Product container selector</label>
                             <input type="text" class="form-control" id="cfgProduct" required placeholder="div.product-item">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Title selector</label>
+                        <div class="col-md-6">
+                            <label class="form-label">Title selector</label>
                             <input type="text" class="form-control" id="cfgTitle" required placeholder="h2.product-title">
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Price selector</label>
+                        <div class="col-md-6">
+                            <label class="form-label">Price selector</label>
                             <input type="text" class="form-control" id="cfgPrice" required placeholder="span.price">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Link selector</label>
+                        <div class="col-md-6">
+                            <label class="form-label">Link selector</label>
                             <input type="text" class="form-control" id="cfgLink" required placeholder="a.product-link">
                         </div>
+                        <div class="col-12 d-flex gap-2 pt-1">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Save
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleAddForm()">Cancel</button>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-success">Save</button>
-                    <button type="button" class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
                 </form>
             </div>
         </div>
 
-        <!-- Quick Templates -->
+        <!-- Templates -->
         <div class="card mb-4">
-            <div class="card-header">Quick Templates</div>
-            <div class="card-body">
-                <button class="btn btn-outline-secondary me-2" onclick="loadTemplate('inet')">Inet.se</button>
-                <button class="btn btn-outline-secondary me-2" onclick="loadTemplate('komplett')">Komplett.se</button>
-                <button class="btn btn-outline-secondary" onclick="loadTemplate('webhallen')">Webhallen.com</button>
+            <div class="card-header">Quick templates</div>
+            <div class="card-body d-flex flex-wrap gap-2">
+                <button class="btn btn-outline-secondary btn-sm" onclick="loadTemplate('inet')">
+                    <i class="bi bi-lightning me-1"></i> Inet.se
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="loadTemplate('komplett')">
+                    <i class="bi bi-lightning me-1"></i> Komplett.se
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="loadTemplate('webhallen')">
+                    <i class="bi bi-lightning me-1"></i> Webhallen.com
+                </button>
             </div>
         </div>
 
-        <!-- Configs List -->
+        <!-- Configs list -->
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Active configurations</h5>
-            </div>
-            <div class="card-body">
-                <div id="configsList">Loading...</div>
+            <div class="card-header">Active configurations</div>
+            <div id="configsList">
+                <div class="card-body text-muted">Loading...</div>
             </div>
         </div>
     </div>
 
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/script.js"></script>
     <script>
         const templates = {
             inet: {
@@ -116,25 +143,39 @@
             }
         };
 
-        function showAddForm() {
-            document.getElementById('addForm').style.display = 'block';
+        function toggleTheme() {
+            const html = document.documentElement;
+            const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', next);
+            localStorage.setItem('theme', next);
+            updateThemeIcon();
         }
 
-        function hideAddForm() {
-            document.getElementById('addForm').style.display = 'none';
+        function updateThemeIcon() {
+            const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            document.getElementById('themeIcon').className = dark ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+        }
+
+        document.querySelectorAll('.nav-link').forEach(l => {
+            if (l.getAttribute('href') === window.location.pathname) l.classList.add('active');
+        });
+
+        function toggleAddForm() {
+            const form = document.getElementById('addForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
 
         function loadTemplate(name) {
             const t = templates[name];
-            if (t) {
-                document.getElementById('cfgName').value = t.name;
-                document.getElementById('cfgUrl').value = t.base_url;
-                document.getElementById('cfgProduct').value = t.product_selector;
-                document.getElementById('cfgTitle').value = t.title_selector;
-                document.getElementById('cfgPrice').value = t.price_selector;
-                document.getElementById('cfgLink').value = t.link_selector;
-                showAddForm();
-            }
+            if (!t) return;
+            document.getElementById('cfgName').value = t.name;
+            document.getElementById('cfgUrl').value = t.base_url;
+            document.getElementById('cfgProduct').value = t.product_selector;
+            document.getElementById('cfgTitle').value = t.title_selector;
+            document.getElementById('cfgPrice').value = t.price_selector;
+            document.getElementById('cfgLink').value = t.link_selector;
+            document.getElementById('addForm').style.display = 'block';
+            document.getElementById('addForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function addConfig(e) {
@@ -148,7 +189,6 @@
                 link_selector: document.getElementById('cfgLink').value,
                 enabled: true
             };
-
             fetch('/api/configs', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -157,59 +197,62 @@
             .then(r => r.json())
             .then(res => {
                 if (res.status === 'success') {
-                    alert('Configuration saved!');
-                    hideAddForm();
+                    showToast('Configuration saved', 'success');
+                    toggleAddForm();
+                    e.target.reset();
                     loadConfigs();
-                    // Clear form
-                    document.getElementById('cfgName').value = '';
-                    document.getElementById('cfgUrl').value = '';
-                    document.getElementById('cfgProduct').value = '';
-                    document.getElementById('cfgTitle').value = '';
-                    document.getElementById('cfgPrice').value = '';
-                    document.getElementById('cfgLink').value = '';
                 } else {
-                    alert('Error: ' + (res.message || 'Could not save'));
+                    showToast('Error: ' + (res.message || 'Could not save'), 'danger');
                 }
             })
-            .catch(err => alert('Error: ' + err));
+            .catch(() => showToast('Failed to save configuration', 'danger'));
         }
 
         function deleteConfig(id) {
             if (!confirm('Delete this configuration?')) return;
-            fetch(`/api/configs/${id}`, {method: 'DELETE'})
+            fetch(`/api/configs/${id}`, { method: 'DELETE' })
                 .then(r => r.json())
-                .then(() => loadConfigs())
-                .catch(err => alert('Error: ' + err));
+                .then(() => { showToast('Configuration deleted', 'success'); loadConfigs(); })
+                .catch(() => showToast('Failed to delete', 'danger'));
         }
 
         function loadConfigs() {
             fetch('/api/configs')
                 .then(r => r.json())
                 .then(configs => {
+                    const el = document.getElementById('configsList');
                     if (configs.length === 0) {
-                        document.getElementById('configsList').innerHTML = 
-                            '<p class="text-muted">No configurations found.</p>';
-                    } else {
-                        let html = '<table class="table"><thead><tr><th>Name</th><th>URL</th><th>Active</th><th></th></tr></thead><tbody>';
-                        configs.forEach(c => {
-                            html += `<tr>
-                                <td>${c.name}</td>
-                                <td>${c.base_url}</td>
-                                <td>${c.enabled ? "✅" : "❌"}</td>
-                                <td><button class="btn btn-sm btn-danger" onclick="deleteConfig(${c.id})">🗑️</button></td>
-                            </tr>`;
-                        });
-                        html += '</tbody></table>';
-                        document.getElementById('configsList').innerHTML = html;
+                        el.innerHTML = `<div class="card-body">
+                            <div class="empty-state">
+                                <i class="bi bi-sliders"></i>
+                                No configurations yet — add your first site above
+                            </div></div>`;
+                        return;
                     }
+                    el.innerHTML = `<div class="table-responsive"><table class="table table-hover">
+                        <thead><tr>
+                            <th>Name</th><th>URL</th><th>Status</th><th></th>
+                        </tr></thead>
+                        <tbody>${configs.map(c => `
+                            <tr>
+                                <td class="fw-500">${escapeHtml(c.name)}</td>
+                                <td class="date-cell">${escapeHtml(c.base_url)}</td>
+                                <td>${c.enabled
+                                    ? '<span class="status-active"><i class="bi bi-circle-fill" style="font-size:0.5rem"></i> Active</span>'
+                                    : '<span class="status-inactive"><i class="bi bi-circle-fill" style="font-size:0.5rem"></i> Inactive</span>'
+                                }</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(${c.id})">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </td>
+                            </tr>`).join('')}
+                        </tbody></table></div>`;
                 })
-                .catch(err => {
-                    document.getElementById('configsList').innerHTML = 
-                        '<p class="text-danger">Could not load configurations</p>';
-                });
+                .catch(() => showToast('Could not load configurations', 'danger'));
         }
 
-        // Load on start
+        updateThemeIcon();
         loadConfigs();
     </script>
 </body>
