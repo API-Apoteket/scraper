@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/blixten85/scraper/compare/v1.6.0...v1.7.0) (2026-04-26)
+
+
+### Features
+
+* add postgres permission init container and daily pg_dump backup ([bf7ce31](https://github.com/blixten85/scraper/commit/bf7ce31ffa7ef7a99873a519fe77d76d5e345ef8))
+
 ## [1.6.0](https://github.com/blixten85/scraper/compare/v1.5.0...v1.6.0) (2026-04-26)
 
 
