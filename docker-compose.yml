@@ -1,10 +1,21 @@
 version: "3.9"
 
 services:
+  postgres-init:
+    image: alpine:3
+    container_name: scraper_db_init
+    restart: "no"
+    command: ["chown", "-R", "70:70", "/pgdata"]
+    volumes:
+      - ${DOCKER}/scraper/postgres:/pgdata
+
   postgres:
     image: postgres:16-alpine
     container_name: scraper_db
     restart: unless-stopped
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
     environment:
       TZ: ${TZ}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -26,6 +37,37 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  pgdump:
+    image: postgres:16-alpine
+    container_name: scraper_pgdump
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      while true; do
+        export PGPASSWORD
+        PGPASSWORD=$(cat /run/secrets/scraper_password)
+        pg_dump -h postgres -U scraper scraper -Fc \
+          -f "/backup/scraper_$(date +%Y%m%d_%H%M).dump" \
+          && find /backup -name '*.dump' -mtime +7 -delete \
+          && echo "[$(date '+%T')] pg_dump ok" \
+          || echo "[$(date '+%T')] pg_dump failed, retrying in 1h" && sleep 3600 && continue
+        sleep 86400
+      done
+    secrets:
+      - scraper_password
+    volumes:
+      - ${DOCKER}/scraper/backup:/backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - scraper_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
 
   scraper:
     image: ghcr.io/blixten85/scraper-engine:latest
