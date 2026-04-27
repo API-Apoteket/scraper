@@ -155,8 +155,8 @@ def reinit_db_pool():
     if old:
         try:
             old.closeall()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Error closing old db pool: {e}")
     init_db_pool()
 
 
@@ -638,7 +638,8 @@ async def run_scraper():
     proxy = None
     if proxy_url:
         proxy = {"server": proxy_url}
-        logger.info(f"Using proxy: {proxy_url.split('@')[-1] if '@' in proxy_url else proxy_url}")
+        proxy_display = str(proxy_url)
+        logger.info(f"Using proxy: {proxy_display.split('@')[-1] if '@' in proxy_display else proxy_display}")
 
     browser = None
     try:
@@ -1018,7 +1019,8 @@ def update_setting(key):
         return jsonify({'status': 'success'})
     except Exception as e:
         conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.error(f"Update setting error: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to update setting'}), 500
     finally:
         return_db(conn)
 
@@ -1041,7 +1043,8 @@ def change_db_password():
         return jsonify({'status': 'success'})
     except Exception as e:
         conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.error(f"Change password error: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to update password'}), 500
     finally:
         try:
             return_db(conn)
@@ -1070,7 +1073,8 @@ def change_db_username():
         return jsonify({'status': 'success'})
     except Exception as e:
         conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.error(f"Change username error: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to update username'}), 500
     finally:
         try:
             return_db(conn)
