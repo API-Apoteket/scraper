@@ -994,8 +994,7 @@ def detect_selectors():
                 browser = await p.chromium.launch(headless=True)
                 page = await browser.new_page()
                 try:
-                    await page.goto(url, timeout=60000)
-                    await page.wait_for_load_state("domcontentloaded")
+                    await page.goto(url, timeout=60000, wait_until="domcontentloaded")
                     try:
                         await page.wait_for_load_state("networkidle", timeout=8000)
                     except Exception:
