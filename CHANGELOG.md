@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/blixten85/scraper/compare/v1.11.0...v1.12.0) (2026-04-27)
+
+
+### Features
+
+* and fix: now both bump patch only. ([49c3f22](https://github.com/blixten85/scraper/commit/49c3f225bf1f2c0ab89713c160c23c7d2faf5fac))
+
 ## [1.11.0](https://github.com/blixten85/scraper/compare/v1.10.0...v1.11.0) (2026-04-27)
 
 
