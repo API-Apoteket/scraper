@@ -143,7 +143,7 @@ def get_deals():
 @app.route('/api/detect', methods=['POST'])
 def detect_selectors():
     try:
-        resp = engine_request('POST', '/detect', json=request.json)
+        resp = engine_request('POST', '/detect', json=request.json, timeout=110)
         return jsonify(resp.json()), resp.status_code
     except Exception as e:
         logger.error(f"Detect error: {e}")
