@@ -48,9 +48,23 @@ def init_db_pool():
     logger.info("Database connection pool initialized")
 
 def get_db():
-    return db_pool.getconn()
+    conn = db_pool.getconn()
+    try:
+        conn.cursor().execute("SELECT 1")
+    except Exception:
+        try:
+            db_pool.putconn(conn, close=True)
+        except Exception:
+            pass
+        conn = db_pool.getconn()
+    return conn
 
 def return_db(conn):
+    try:
+        conn.rollback()
+    except Exception:
+        db_pool.putconn(conn, close=True)
+        return
     db_pool.putconn(conn)
 
 app = FastAPI(
@@ -88,45 +102,51 @@ async def shutdown():
 
 @app.get("/health")
 def health():
+    conn = None
     try:
         conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT 1")
-        return_db(conn)
+        conn.cursor().execute("SELECT 1")
         return {"status": "healthy", "database": "connected", "timestamp": datetime.utcnow().isoformat()}
-    except Exception as e:
+    except Exception:
         return {"status": "unhealthy", "error": "Database connection failed"}
+    finally:
+        if conn:
+            return_db(conn)
 
 @app.get("/products")
 def get_products(limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0), search: Optional[str] = Query(None)):
     conn = get_db()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    query = "SELECT id, title, url, current_price, first_seen, last_updated FROM products"
-    params = []
-    if search:
-        query += " WHERE title ILIKE %s"
-        params.append(f"%{search}%")
-    query += " ORDER BY last_updated DESC LIMIT %s OFFSET %s"
-    params.extend([limit, offset])
-    cur.execute(query, params)
-    products = cur.fetchall()
-    cur.execute("SELECT COUNT(*) FROM products" + (" WHERE title ILIKE %s" if search else ""), params[:-2] if search else [])
-    total = cur.fetchone()['count']
-    return_db(conn)
-    return {"products": products, "total": total, "limit": limit, "offset": offset}
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        query = "SELECT id, title, url, current_price, first_seen, last_updated FROM products"
+        params = []
+        if search:
+            query += " WHERE title ILIKE %s"
+            params.append(f"%{search}%")
+        query += " ORDER BY last_updated DESC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+        cur.execute(query, params)
+        products = cur.fetchall()
+        cur.execute("SELECT COUNT(*) FROM products" + (" WHERE title ILIKE %s" if search else ""), params[:-2] if search else [])
+        total = cur.fetchone()['count']
+        return {"products": products, "total": total, "limit": limit, "offset": offset}
+    finally:
+        return_db(conn)
 
 @app.get("/stats")
 def get_stats():
     conn = get_db()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT COUNT(*) FROM products")
-    total_products = cur.fetchone()['count']
-    cur.execute("SELECT COUNT(DISTINCT product_id) FROM price_history WHERE timestamp >= NOW() - INTERVAL '1 day'")
-    updated_24h = cur.fetchone()['count']
-    cur.execute("SELECT COUNT(*) FROM scraper_config WHERE enabled = 1")
-    active_configs = cur.fetchone()['count']
-    return_db(conn)
-    return {"total_products": total_products, "updated_24h": updated_24h, "active_configs": active_configs}
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT COUNT(*) FROM products")
+        total_products = cur.fetchone()['count']
+        cur.execute("SELECT COUNT(DISTINCT product_id) FROM price_history WHERE timestamp >= NOW() - INTERVAL '1 day'")
+        updated_24h = cur.fetchone()['count']
+        cur.execute("SELECT COUNT(*) FROM scraper_config WHERE enabled = 1")
+        active_configs = cur.fetchone()['count']
+        return {"total_products": total_products, "updated_24h": updated_24h, "active_configs": active_configs}
+    finally:
+        return_db(conn)
 
 @app.get("/products/{product_id}/history")
 def get_product_history(product_id: int):
