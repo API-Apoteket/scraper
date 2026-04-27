@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.3](https://github.com/blixten85/scraper/compare/v1.15.2...v1.15.3) (2026-04-27)
+
+
+### Bug Fixes
+
+* replace Flask dev server with waitress on port 5001 ([#94](https://github.com/blixten85/scraper/issues/94)) ([756a977](https://github.com/blixten85/scraper/commit/756a9772516afba738d2514be5bb954f6d477f70))
+
 ## [1.15.2](https://github.com/blixten85/scraper/compare/v1.15.1...v1.15.2) (2026-04-27)
 
 
