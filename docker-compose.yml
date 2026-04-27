@@ -1,35 +1,40 @@
 version: "3.9"
 
 services:
-  postgres-init:
-    image: alpine:3
-    container_name: scraper_db_init
-    restart: "no"
-    command: ["chown", "-R", "70:70", "/pgdata"]
-    volumes:
-      - ${DOCKER}/scraper/postgres:/pgdata
-
   postgres:
     image: postgres:16-alpine
     container_name: scraper_db
     restart: unless-stopped
-    depends_on:
-      postgres-init:
-        condition: service_completed_successfully
+    user: root
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        chown -R 70:70 /var/lib/postgresql/data
+        if [ ! -f /credentials/db_password ]; then
+          pw=$$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
+          echo "$$pw" > /credentials/db_password
+          echo ""
+          echo "============================================"
+          echo "  Database password generated:"
+          echo "  $$pw"
+          echo "  (stored in: DOCKER/scraper/credentials/db_password)"
+          echo "============================================"
+          echo ""
+        fi
+        export POSTGRES_PASSWORD=$$(cat /credentials/db_password)
+        exec su-exec postgres docker-entrypoint.sh postgres
     environment:
       TZ: ${TZ}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD_FILE: /run/secrets/scraper_password
+      POSTGRES_DB: scraper
+      POSTGRES_USER: scraper
     volumes:
       - ${DOCKER}/scraper/postgres:/var/lib/postgresql/data
+      - ${DOCKER}/scraper/credentials:/credentials
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U scraper"]
       interval: 10s
       timeout: 5s
       retries: 5
-    secrets:
-      - scraper_password
     logging:
       driver: json-file
       options:
@@ -45,18 +50,13 @@ services:
     environment:
       TZ: ${TZ}
       DB_HOST: postgres
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD_FILE: /run/secrets/scraper_password
-      API_KEY_FILE: /run/secrets/api_key
-      DISCORD_WEBHOOK_FILE: /run/secrets/discord_webhook
+      DB_PASSWORD_FILE: /credentials/db_password
+      API_KEY_FILE: /credentials/api_key
+      DISCORD_WEBHOOK_FILE: /credentials/discord_webhook
     volumes:
       - ${DOCKER}/scraper/logs:/logs
       - ${DOCKER}/scraper/playwright-cache:/ms-playwright
-    secrets:
-      - scraper_password
-      - api_key
-      - discord_webhook
+      - ${DOCKER}/scraper/credentials:/credentials
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,11 +75,3 @@ services:
       swag_address: "scraper"
       swag_port: "3000"
       swag_url: "scraper.${DOMAIN}"
-
-secrets:
-  scraper_password:
-    file: ${CONFIG}/.secrets/scraper_password
-  api_key:
-    file: ${CONFIG}/.secrets/api_key
-  discord_webhook:
-    file: ${CONFIG}/.secrets/discord_webhook

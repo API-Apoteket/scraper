@@ -90,8 +90,10 @@ write_buffer = []
 write_lock = asyncio.Lock()
 
 
+CREDENTIALS_DIR = os.getenv('CREDENTIALS_DIR', '/credentials')
+
+
 def read_secret(env_var, default=""):
-    """Read secret from file or env"""
     path = os.getenv(f"{env_var}_FILE")
     if path and os.path.exists(path):
         with open(path) as f:
@@ -99,7 +101,63 @@ def read_secret(env_var, default=""):
     return os.getenv(env_var, default)
 
 
+def read_credential(name, default=""):
+    path = os.path.join(CREDENTIALS_DIR, name)
+    if os.path.exists(path):
+        with open(path) as f:
+            return f.read().strip()
+    return default
+
+
+def write_credential(name, value):
+    os.makedirs(CREDENTIALS_DIR, exist_ok=True)
+    with open(os.path.join(CREDENTIALS_DIR, name), 'w') as f:
+        f.write(value)
+
+
+def get_db_user():
+    return read_credential('db_user') or os.getenv('DB_USER', 'scraper')
+
+
+def init_credentials():
+    import secrets as _secrets
+    api_key_path = os.path.join(CREDENTIALS_DIR, 'api_key')
+    if not os.path.exists(api_key_path):
+        key = _secrets.token_urlsafe(32)
+        write_credential('api_key', key)
+        logger.info("=" * 50)
+        logger.info("  GENERATED API KEY: %s", key)
+        logger.info("  Save this — it is required to access the API")
+        logger.info("=" * 50)
+
+
 db_pool = None
+
+
+def init_db_pool():
+    global db_pool
+    db_password = read_secret("DB_PASSWORD")
+    db_pool = ThreadedConnectionPool(
+        minconn=1, maxconn=10,
+        host=os.getenv("DB_HOST", "postgres"),
+        database=os.getenv("DB_NAME", "scraper"),
+        user=get_db_user(),
+        password=db_password,
+        connect_timeout=10
+    )
+    logger.info("Database connection pool initialized")
+
+
+def reinit_db_pool():
+    global db_pool
+    old = db_pool
+    db_pool = None
+    if old:
+        try:
+            old.closeall()
+        except Exception:
+            pass
+    init_db_pool()
 
 
 def get_setting(key):
@@ -124,19 +182,6 @@ def get_setting(key):
         return raw.lower() in ('true', '1', 'yes')
     return raw
 
-def init_db_pool():
-    global db_pool
-    db_password = read_secret("DB_PASSWORD")
-    
-    db_pool = ThreadedConnectionPool(
-        minconn=1, maxconn=10,
-        host=os.getenv("DB_HOST", "postgres"),
-        database=os.getenv("DB_NAME", "scraper"),
-        user=os.getenv("DB_USER", "scraper"),
-        password=db_password,
-        connect_timeout=10
-    )
-    logger.info("Database connection pool initialized")
 
 
 def get_db():
@@ -978,6 +1023,61 @@ def update_setting(key):
         return_db(conn)
 
 
+@app.route('/credentials/password', methods=['PUT'])
+def change_db_password():
+    from psycopg2 import sql as pgsql
+    data = request.json or {}
+    new_pw = data.get('password', '').strip()
+    if len(new_pw) < 8:
+        return jsonify({'status': 'error', 'message': 'Password must be at least 8 characters'}), 400
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(pgsql.SQL("ALTER USER {} WITH PASSWORD %s").format(
+            pgsql.Identifier(get_db_user())), (new_pw,))
+        conn.commit()
+        write_credential('db_password', new_pw)
+        reinit_db_pool()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        try:
+            return_db(conn)
+        except Exception:
+            pass
+
+
+@app.route('/credentials/username', methods=['PUT'])
+def change_db_username():
+    from psycopg2 import sql as pgsql
+    data = request.json or {}
+    new_user = data.get('username', '').strip()
+    if not new_user or not new_user.replace('_', '').isalnum():
+        return jsonify({'status': 'error', 'message': 'Invalid username (letters, numbers, underscores only)'}), 400
+    old_user = get_db_user()
+    if new_user == old_user:
+        return jsonify({'status': 'success'})
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(pgsql.SQL("ALTER USER {} RENAME TO {}").format(
+            pgsql.Identifier(old_user), pgsql.Identifier(new_user)))
+        conn.commit()
+        write_credential('db_user', new_user)
+        reinit_db_pool()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        try:
+            return_db(conn)
+        except Exception:
+            pass
+
+
 @app.route('/scrape', methods=['POST'])
 def trigger_scrape():
     global scraping_active
@@ -1080,6 +1180,7 @@ def signal_handler(signum, frame):
 
 
 if __name__ == "__main__":
+    init_credentials()
     init_db_pool()
     init_db()
     signal.signal(signal.SIGTERM, signal_handler)

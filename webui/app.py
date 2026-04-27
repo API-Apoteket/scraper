@@ -184,6 +184,16 @@ def update_setting(key):
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 503
 
 
+@app.route('/api/credentials/<path:subpath>', methods=['PUT'])
+def update_credential(subpath):
+    try:
+        resp = engine_request('PUT', f'/credentials/{subpath}', json=request.json)
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        logger.error(f"Credentials update error: {e}")
+        return jsonify({'status': 'error', 'message': 'Internal server error'}), 503
+
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '3000'))
     app.run(host='0.0.0.0', port=port, debug=False)

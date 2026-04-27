@@ -127,6 +127,27 @@
                     <div id="settingsGrid" class="row g-3">
                         <div class="col-12 text-muted">Loading...</div>
                     </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3"><i class="bi bi-key me-2"></i>Database credentials</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">New username</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="credUsername" placeholder="scraper">
+                                <button class="btn btn-outline-secondary" onclick="saveCredential('username')">Save</button>
+                            </div>
+                            <div class="form-text">Renames the PostgreSQL user. Takes effect immediately.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">New password</label>
+                            <div class="input-group input-group-sm">
+                                <input type="password" class="form-control" id="credPassword" placeholder="min 8 characters">
+                                <button class="btn btn-outline-secondary" onclick="saveCredential('password')">Save</button>
+                            </div>
+                            <div class="form-text">Updates the PostgreSQL password immediately.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -371,6 +392,27 @@
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        function saveCredential(type) {
+            const fieldId = type === 'password' ? 'credPassword' : 'credUsername';
+            const value = document.getElementById(fieldId).value.trim();
+            if (!value) { showToast('Enter a value first', 'warning'); return; }
+            fetch(`/api/credentials/${type}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(type === 'password' ? { password: value } : { username: value })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    showToast(`${type === 'password' ? 'Password' : 'Username'} updated`, 'success');
+                    document.getElementById(fieldId).value = '';
+                } else {
+                    showToast('Failed: ' + (res.message || ''), 'danger');
+                }
+            })
+            .catch(() => showToast('Request failed', 'danger'));
         }
 
         function saveSetting(key, value) {
