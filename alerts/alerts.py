@@ -78,6 +78,12 @@ def get_setting(key):
         cur.execute("SELECT value FROM settings WHERE key = %s", (key,))
         row = cur.fetchone()
         raw = row[0] if row else None
+    except psycopg2.errors.UndefinedTable:
+        conn.rollback()
+        return default
+    except psycopg2.Error:
+        conn.rollback()
+        return default
     finally:
         return_db(conn)
     if raw is None:
