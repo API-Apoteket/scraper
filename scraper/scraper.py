@@ -732,8 +732,10 @@ def detect_selectors():
     """Auto-detect CSS selectors for a given URL using Playwright heuristics"""
     data = request.json or {}
     url = data.get('url', '').strip()
-    if not url or not url.startswith(('http://', 'https://')):
+    if not url:
         return jsonify({'status': 'error', 'message': 'Invalid URL'}), 400
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
 
     detect_js = """() => {
         const PRICE_RE = /\\d[\\d\\s]*\\s*(kr|SEK|:-)/i;
@@ -813,11 +815,20 @@ def detect_selectors():
             break;
         }
 
+        const ogSiteName = document.querySelector('meta[property="og:site_name"]');
+        let siteName = '';
+        if (ogSiteName && ogSiteName.content) {
+            siteName = ogSiteName.content.trim();
+        } else {
+            siteName = document.title.split(/[|\-–—]/)[0].trim();
+        }
+
         return {
             product_selector: productSelector,
             title_selector: titleSelector,
             price_selector: priceSelector,
-            link_selector: linkSelector
+            link_selector: linkSelector,
+            site_name: siteName
         };
     }"""
 

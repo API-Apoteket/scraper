@@ -58,7 +58,7 @@
                         <div class="col-md-6">
                             <label class="form-label">URL</label>
                             <div class="d-flex gap-2">
-                                <input type="url" class="form-control" id="cfgUrl" required placeholder="https://www.example.com/products">
+                                <input type="text" class="form-control" id="cfgUrl" required placeholder="https://www.example.com/products">
                                 <button type="button" class="btn btn-outline-secondary text-nowrap" id="detectBtn" onclick="autoDetect()" title="Auto-detect selectors">
                                     <i class="bi bi-magic" id="detectIcon"></i> Detect
                                 </button>
@@ -183,9 +183,17 @@
             document.getElementById('addForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
+        function normalizeUrl(raw) {
+            const s = raw.trim();
+            if (!s) return s;
+            return s.startsWith('http://') || s.startsWith('https://') ? s : 'https://' + s;
+        }
+
         function autoDetect() {
-            const url = document.getElementById('cfgUrl').value.trim();
+            const urlInput = document.getElementById('cfgUrl');
+            const url = normalizeUrl(urlInput.value);
             if (!url) { showToast('Enter a URL first', 'warning'); return; }
+            urlInput.value = url;
             const btn = document.getElementById('detectBtn');
             const icon = document.getElementById('detectIcon');
             btn.disabled = true;
@@ -202,6 +210,8 @@
                     if (res.title_selector)   document.getElementById('cfgTitle').value   = res.title_selector;
                     if (res.price_selector)   document.getElementById('cfgPrice').value   = res.price_selector;
                     if (res.link_selector)    document.getElementById('cfgLink').value    = res.link_selector;
+                    if (res.site_name && !document.getElementById('cfgName').value.trim())
+                        document.getElementById('cfgName').value = res.site_name;
                     const found = [res.product_selector, res.title_selector, res.price_selector, res.link_selector].filter(Boolean).length;
                     showToast(`Detected ${found}/4 selectors`, found >= 3 ? 'success' : 'warning');
                 } else {
@@ -219,7 +229,7 @@
             e.preventDefault();
             const data = {
                 name: document.getElementById('cfgName').value,
-                base_url: document.getElementById('cfgUrl').value,
+                base_url: normalizeUrl(document.getElementById('cfgUrl').value),
                 product_selector: document.getElementById('cfgProduct').value,
                 title_selector: document.getElementById('cfgTitle').value,
                 price_selector: document.getElementById('cfgPrice').value,
