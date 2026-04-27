@@ -1,11 +1,6 @@
 # 🕷️ Web Scraper Platform
 
-[![Scraper](https://github.com/blixten85/scraper/actions/workflows/scraper-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/scraper-build.yml)
-[![API](https://github.com/blixten85/scraper/actions/workflows/api-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/api-build.yml)
-[![WebUI](https://github.com/blixten85/scraper/actions/workflows/webui-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/webui-build.yml)
-[![Alerts](https://github.com/blixten85/scraper/actions/workflows/alerts-build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/alerts-build.yml)
-<br>
-![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/blixten85/scraper?utm_source=oss&utm_medium=github&utm_campaign=blixten85%2Fscraper&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+[![Build](https://github.com/blixten85/scraper/actions/workflows/build.yml/badge.svg)](https://github.com/blixten85/scraper/actions/workflows/build.yml)
 [![Release](https://img.shields.io/github/v/release/blixten85/scraper)](https://github.com/blixten85/scraper/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dependabot](https://img.shields.io/badge/Dependabot-active-brightgreen)](https://github.com/blixten85/scraper/network/updates)
