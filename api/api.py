@@ -18,7 +18,7 @@ from psycopg2.pool import ThreadedConnectionPool
 DB_HOST = os.getenv('DB_HOST', 'postgres')
 DB_NAME = os.getenv('DB_NAME', 'scraper')
 DB_USER = os.getenv('DB_USER', 'scraper')
-ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'https://scraper.denied.se').split(',')
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*').split(',')
 
 logging.basicConfig(
     level=logging.INFO,

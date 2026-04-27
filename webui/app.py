@@ -164,6 +164,26 @@ def export_csv():
         logger.error(f"Export error: {e}")
         return jsonify({'error': 'Export failed'}), 503
 
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    try:
+        resp = engine_request('GET', '/settings')
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        logger.error(f"Settings error: {e}")
+        return jsonify({'status': 'error', 'message': 'Internal server error'}), 503
+
+
+@app.route('/api/settings/<key>', methods=['PUT'])
+def update_setting(key):
+    try:
+        resp = engine_request('PUT', f'/settings/{key}', json=request.json)
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        logger.error(f"Settings update error: {e}")
+        return jsonify({'status': 'error', 'message': 'Internal server error'}), 503
+
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '3000'))
     app.run(host='0.0.0.0', port=port, debug=False)

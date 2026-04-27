@@ -36,35 +36,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  pgdump:
-    image: postgres:16-alpine
-    container_name: scraper_pgdump
-    restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c"]
-    command: |
-      while true; do
-        export PGPASSWORD
-        PGPASSWORD=$(cat /run/secrets/scraper_password)
-        pg_dump -h postgres -U scraper scraper -Fc \
-          -f "/backup/scraper_$(date +%Y%m%d_%H%M).dump" \
-          && find /backup -name '*.dump' -mtime +7 -delete \
-          && echo "[$(date '+%T')] pg_dump ok" \
-          || echo "[$(date '+%T')] pg_dump failed, retrying in 1h" && sleep 3600 && continue
-        sleep 86400
-      done
-    secrets:
-      - scraper_password
-    volumes:
-      - ${DOCKER}/scraper/backup:/backup
-    depends_on:
-      postgres:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "2"
-
   scraper:
     image: ghcr.io/blixten85/scraper:latest
     container_name: scraper
@@ -79,16 +50,6 @@ services:
       DB_PASSWORD_FILE: /run/secrets/scraper_password
       API_KEY_FILE: /run/secrets/api_key
       DISCORD_WEBHOOK_FILE: /run/secrets/discord_webhook
-      ALLOWED_ORIGINS: "https://scraper.${DOMAIN}"
-      CONCURRENT_PAGES: ${CONCURRENT_PAGES}
-      HEADLESS: ${HEADLESS}
-      SCRAPE_INTERVAL: ${SCRAPE_INTERVAL}
-      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
-      PROXY_URL: ${PROXY_URL}
-      CHECK_INTERVAL: ${ALERT_CHECK_INTERVAL}
-      MIN_DROP_PERCENT: ${MIN_DROP_PERCENT}
-      MIN_DROP_AMOUNT: ${MIN_DROP_AMOUNT}
-      COOLDOWN_HOURS: ${COOLDOWN_HOURS}
     volumes:
       - ${DOCKER}/scraper/logs:/logs
       - ${DOCKER}/scraper/playwright-cache:/ms-playwright

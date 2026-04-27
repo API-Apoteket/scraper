@@ -174,6 +174,42 @@ PROXY_URL=
 
 ---
 
+## 💾 Optional: Scheduled Database Backups
+
+Add this service to your `docker-compose.yml` if you want automatic daily `pg_dump` backups (kept for 7 days):
+
+```yaml
+  pgdump:
+    image: postgres:16-alpine
+    container_name: scraper_pgdump
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      while true; do
+        PGPASSWORD=$(cat /run/secrets/scraper_password)
+        pg_dump -h postgres -U scraper scraper -Fc \
+          -f "/backup/scraper_$(date +%Y%m%d_%H%M).dump" \
+          && find /backup -name '*.dump' -mtime +7 -delete \
+          && echo "[$(date '+%T')] pg_dump ok" \
+          || echo "[$(date '+%T')] pg_dump failed" && sleep 3600 && continue
+        sleep 86400
+      done
+    secrets:
+      - scraper_password
+    volumes:
+      - ${DOCKER}/scraper/backup:/backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+```
+
+---
+
 ## 🛠️ Troubleshooting
 
 ### Postgres won't start

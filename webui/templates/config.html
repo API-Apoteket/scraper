@@ -114,6 +114,22 @@
                 <div class="card-body text-muted">Loading...</div>
             </div>
         </div>
+
+        <!-- Advanced settings -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center"
+                 style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#advancedBody">
+                <span><i class="bi bi-gear me-2"></i>Advanced settings</span>
+                <i class="bi bi-chevron-down" id="advancedChevron"></i>
+            </div>
+            <div class="collapse" id="advancedBody">
+                <div class="card-body">
+                    <div id="settingsGrid" class="row g-3">
+                        <div class="col-12 text-muted">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
@@ -301,6 +317,75 @@
 
         updateThemeIcon();
         loadConfigs();
+
+        // === Advanced settings ===
+        const advancedBody = document.getElementById('advancedBody');
+        advancedBody.addEventListener('show.bs.collapse', loadSettings);
+        document.getElementById('advancedBody').addEventListener('shown.bs.collapse', () => {
+            document.getElementById('advancedChevron').className = 'bi bi-chevron-up';
+        });
+        document.getElementById('advancedBody').addEventListener('hidden.bs.collapse', () => {
+            document.getElementById('advancedChevron').className = 'bi bi-chevron-down';
+        });
+
+        function loadSettings() {
+            fetch('/api/settings')
+                .then(r => r.json())
+                .then(settings => renderSettings(settings))
+                .catch(() => {
+                    document.getElementById('settingsGrid').innerHTML =
+                        '<div class="col-12 text-danger">Could not load settings</div>';
+                });
+        }
+
+        function renderSettings(settings) {
+            const grid = document.getElementById('settingsGrid');
+            grid.innerHTML = Object.entries(settings).map(([key, s]) => {
+                const inputId = `setting_${key}`;
+                let input;
+                if (s.type === 'bool') {
+                    input = `<div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" id="${inputId}"
+                            ${s.value === 'true' || s.value === true ? 'checked' : ''}
+                            onchange="saveSetting('${key}', this.checked.toString())">
+                    </div>`;
+                } else {
+                    const unit = s.unit ? `<span class="input-group-text">${escapeHtml(s.unit)}</span>` : '';
+                    const placeholder = s.placeholder ? `placeholder="${escapeHtml(s.placeholder)}"` : '';
+                    const min = s.min != null ? `min="${s.min}"` : '';
+                    input = `<div class="input-group input-group-sm">
+                        <input type="${s.type === 'int' || s.type === 'float' ? 'number' : 'text'}"
+                            class="form-control" id="${inputId}"
+                            value="${escapeHtml(String(s.value))}"
+                            ${min} ${placeholder}
+                            onchange="saveSetting('${key}', this.value)">
+                        ${unit}
+                    </div>`;
+                }
+                return `<div class="col-md-6">
+                    <label class="form-label fw-500 mb-1" for="${inputId}">${escapeHtml(s.label)}</label>
+                    ${input}
+                    <div class="form-text mt-1">${escapeHtml(s.description)}</div>
+                    <div class="form-text text-secondary" style="font-size:0.75rem">
+                        <i class="bi bi-info-circle me-1"></i>${escapeHtml(s.why)}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function saveSetting(key, value) {
+            fetch(`/api/settings/${key}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ value })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') showToast('Setting saved', 'success');
+                else showToast('Failed to save: ' + (res.message || ''), 'danger');
+            })
+            .catch(() => showToast('Save failed', 'danger'));
+        }
     </script>
 </body>
 </html>

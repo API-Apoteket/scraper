@@ -26,10 +26,50 @@ app = Flask(__name__)
 
 # === Configuration ===
 LOG_DIR = "/logs"
-MAX_CONCURRENT = int(os.getenv('CONCURRENT_PAGES', '2'))
-HEADLESS = os.getenv('HEADLESS', 'true').lower() == 'true'
-SCRAPE_INTERVAL = int(os.getenv('SCRAPE_INTERVAL', '3600'))
-PROXY_URL = os.getenv('PROXY_URL', '')
+
+SETTINGS_META = {
+    'concurrent_pages': {
+        'label': 'Concurrent pages', 'type': 'int', 'default': 2, 'unit': 'pages', 'min': 1, 'max': 10,
+        'description': 'Number of pages scraped simultaneously.',
+        'why': 'Increase for faster scraping; decrease if sites block requests or memory is low.',
+    },
+    'headless': {
+        'label': 'Headless browser', 'type': 'bool', 'default': True,
+        'description': 'Run the browser without a visible window.',
+        'why': 'Disable only for debugging — requires a display, not suitable for production.',
+    },
+    'scrape_interval': {
+        'label': 'Scrape interval', 'type': 'int', 'default': 3600, 'unit': 's', 'min': 300,
+        'description': 'Seconds between full scraping runs.',
+        'why': 'Lower for fresher prices; higher to reduce server load and avoid rate-limiting.',
+    },
+    'proxy_url': {
+        'label': 'Proxy URL', 'type': 'str', 'default': '',
+        'placeholder': 'socks5://user:pass@host:1080',
+        'description': 'SOCKS5 or HTTP proxy for all scraping requests.',
+        'why': 'Use if your IP is blocked by a site.',
+    },
+    'check_interval': {
+        'label': 'Alert check interval', 'type': 'int', 'default': 1800, 'unit': 's', 'min': 60,
+        'description': 'Seconds between price-drop checks.',
+        'why': 'Lower for faster alerts; higher to reduce database load.',
+    },
+    'min_drop_percent': {
+        'label': 'Minimum drop (%)', 'type': 'float', 'default': 5.0, 'unit': '%', 'min': 0.1,
+        'description': 'Smallest percentage price drop that triggers an alert.',
+        'why': 'Lower to catch small deals; raise to reduce noise.',
+    },
+    'min_drop_amount': {
+        'label': 'Minimum drop (kr)', 'type': 'int', 'default': 100, 'unit': 'kr', 'min': 1,
+        'description': 'Smallest absolute price drop in kr that triggers an alert.',
+        'why': 'Prevents alerts on cheap items with trivial drops. Raise to focus on expensive products.',
+    },
+    'cooldown_hours': {
+        'label': 'Alert cooldown', 'type': 'int', 'default': 24, 'unit': 'h', 'min': 1,
+        'description': 'Hours before the same product can trigger another alert.',
+        'why': 'Prevents repeated alerts when a price stays low. Lower if you want every change notified.',
+    },
+}
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -60,6 +100,29 @@ def read_secret(env_var, default=""):
 
 
 db_pool = None
+
+
+def get_setting(key):
+    meta = SETTINGS_META.get(key, {})
+    default = meta.get('default', '')
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT value FROM settings WHERE key = %s", (key,))
+        row = cur.fetchone()
+        raw = row['value'] if row else None
+    finally:
+        return_db(conn)
+    if raw is None:
+        return default
+    t = meta.get('type', 'str')
+    if t == 'int':
+        return int(raw)
+    if t == 'float':
+        return float(raw)
+    if t == 'bool':
+        return raw.lower() in ('true', '1', 'yes')
+    return raw
 
 def init_db_pool():
     global db_pool
@@ -141,6 +204,14 @@ def init_db():
     )
     """)
     
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+    """)
+
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_url ON products(url)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_last_updated ON products(last_updated)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_price_history_product ON price_history(product_id)")
@@ -515,16 +586,20 @@ async def run_scraper():
     
     flush_task = asyncio.create_task(periodic_flush())
     
+    concurrent_pages = get_setting('concurrent_pages')
+    headless = get_setting('headless')
+    proxy_url = get_setting('proxy_url')
+
     proxy = None
-    if PROXY_URL:
-        proxy = {"server": PROXY_URL}
-        logger.info(f"Using proxy: {PROXY_URL.split('@')[-1] if '@' in PROXY_URL else PROXY_URL}")
-    
+    if proxy_url:
+        proxy = {"server": proxy_url}
+        logger.info(f"Using proxy: {proxy_url.split('@')[-1] if '@' in proxy_url else proxy_url}")
+
     browser = None
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(
-                headless=HEADLESS,
+                headless=headless,
                 args=[
                     '--no-sandbox',
                     '--disable-dev-shm-usage',
@@ -547,7 +622,7 @@ async def run_scraper():
                     'DNT': '1',
                 }
             )
-            sem = asyncio.Semaphore(MAX_CONCURRENT)
+            sem = asyncio.Semaphore(concurrent_pages)
             
             async def worker(cfg):
                 async with sem:
@@ -577,7 +652,8 @@ async def scraper_loop():
         finally:
             scraping_active = False
         
-        for _ in range(SCRAPE_INTERVAL):
+        interval = get_setting('scrape_interval')
+        for _ in range(interval):
             if shutdown_event.is_set():
                 break
             await asyncio.sleep(1)
@@ -860,6 +936,46 @@ def detect_selectors():
     finally:
         loop.close()
     return jsonify(result)
+
+
+@app.route('/settings', methods=['GET'])
+def get_settings():
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT key, value FROM settings")
+        stored = {row['key']: row['value'] for row in cur.fetchall()}
+    finally:
+        return_db(conn)
+    result = {}
+    for key, meta in SETTINGS_META.items():
+        raw = stored.get(key)
+        result[key] = {**meta, 'value': raw if raw is not None else str(meta['default'])}
+    return jsonify(result)
+
+
+@app.route('/settings/<key>', methods=['PUT'])
+def update_setting(key):
+    if key not in SETTINGS_META:
+        return jsonify({'status': 'error', 'message': 'Unknown setting'}), 400
+    value = (request.json or {}).get('value')
+    if value is None:
+        return jsonify({'status': 'error', 'message': 'Missing value'}), 400
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO settings (key, value, updated_at)
+            VALUES (%s, %s, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        """, (key, str(value)))
+        conn.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        return_db(conn)
 
 
 @app.route('/scrape', methods=['POST'])

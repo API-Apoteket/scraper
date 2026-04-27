@@ -19,10 +19,13 @@ LOG_DIR = "/logs"
 DB_HOST = os.getenv('DB_HOST', 'postgres')
 DB_NAME = os.getenv('DB_NAME', 'scraper')
 DB_USER = os.getenv('DB_USER', 'scraper')
-CHECK_INTERVAL = int(os.getenv('CHECK_INTERVAL', '1800'))
-MIN_DROP_PERCENT = float(os.getenv('MIN_DROP_PERCENT', '5'))
-MIN_DROP_AMOUNT = int(os.getenv('MIN_DROP_AMOUNT', '100'))
-COOLDOWN_HOURS = int(os.getenv('COOLDOWN_HOURS', '24'))
+
+DEFAULTS = {
+    'check_interval': 1800,
+    'min_drop_percent': 5.0,
+    'min_drop_amount': 100,
+    'cooldown_hours': 24,
+}
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -41,9 +44,7 @@ alerts_sent = 0
 db_pool = None
 
 
-# === Helper function for secrets ===
 def read_secret(env_var, default=""):
-    """Read secret from file or env"""
     path = os.getenv(f"{env_var}_FILE")
     if path and os.path.exists(path):
         with open(path) as f:
@@ -54,15 +55,10 @@ def read_secret(env_var, default=""):
 def init_db_pool():
     global db_pool
     db_password = read_secret("DB_PASSWORD")
-    
     db_pool = ThreadedConnectionPool(
-        minconn=1,
-        maxconn=5,
-        host=DB_HOST,
-        database=DB_NAME,
-        user=DB_USER,
-        password=db_password,
-        connect_timeout=10
+        minconn=1, maxconn=5,
+        host=DB_HOST, database=DB_NAME, user=DB_USER,
+        password=db_password, connect_timeout=10
     )
 
 
@@ -74,15 +70,32 @@ def return_db(conn):
     db_pool.putconn(conn)
 
 
+def get_setting(key):
+    default = DEFAULTS.get(key)
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT value FROM settings WHERE key = %s", (key,))
+        row = cur.fetchone()
+        raw = row[0] if row else None
+    finally:
+        return_db(conn)
+    if raw is None:
+        return default
+    if isinstance(default, float):
+        return float(raw)
+    if isinstance(default, int):
+        return int(raw)
+    return raw
+
+
 def get_webhook():
-    """Get Discord webhook from secret or env"""
     return read_secret("DISCORD_WEBHOOK")
 
 
 def send_discord(webhook, title, old_price, new_price, url):
     drop = old_price - new_price
     percent = round((drop / old_price) * 100, 1)
-    
     payload = {
         "embeds": [{
             "title": "💸 Price Drop!",
@@ -96,7 +109,6 @@ def send_discord(webhook, title, old_price, new_price, url):
             ]
         }]
     }
-    
     try:
         return requests.post(webhook, json=payload, timeout=10).status_code == 204
     except requests.exceptions.RequestException:
@@ -105,19 +117,22 @@ def send_discord(webhook, title, old_price, new_price, url):
 
 async def check_drops():
     global alerts_sent
-    
+
+    min_drop_percent = get_setting('min_drop_percent')
+    min_drop_amount = get_setting('min_drop_amount')
+    cooldown_hours = get_setting('cooldown_hours')
+
     webhook = get_webhook()
     if not webhook:
         logger.error("No webhook configured")
         return 0
-    
+
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
         cur.execute("""
             WITH price_drops AS (
-                SELECT 
+                SELECT
                     p.id,
                     p.title,
                     p.url,
@@ -129,16 +144,16 @@ async def check_drops():
             SELECT * FROM price_drops
             WHERE old_price IS NOT NULL AND new_price < old_price
         """)
-        
+
         alerts_this_run = 0
-        
+
         for row in cur.fetchall():
             drop_amount = row['old_price'] - row['new_price']
             drop_percent = (drop_amount / row['old_price']) * 100
-            
-            if drop_percent < MIN_DROP_PERCENT or drop_amount < MIN_DROP_AMOUNT:
+
+            if drop_percent < min_drop_percent or drop_amount < min_drop_amount:
                 continue
-            
+
             cur.execute("""
                 INSERT INTO alert_cooldown (product_id, last_alert)
                 VALUES (%s, NOW())
@@ -146,15 +161,15 @@ async def check_drops():
                     last_alert = NOW()
                 WHERE alert_cooldown.last_alert < NOW() - INTERVAL '%s hours'
                 RETURNING product_id
-            """, (row['id'], COOLDOWN_HOURS))
-            
+            """, (row['id'], cooldown_hours))
+
             if cur.fetchone():
                 if send_discord(webhook, row['title'], row['old_price'], row['new_price'], row['url']):
                     alerts_this_run += 1
                     alerts_sent += 1
                     logger.info(f"Alert sent: {row['title'][:50]}...")
                     await asyncio.sleep(1)
-        
+
         conn.commit()
         return alerts_this_run
     finally:
@@ -162,8 +177,6 @@ async def check_drops():
 
 
 async def alerts_loop():
-    logger.info(f"Alerts started. Interval: {CHECK_INTERVAL}s")
-    
     while not shutdown_event.is_set():
         try:
             sent = await check_drops()
@@ -171,12 +184,14 @@ async def alerts_loop():
                 logger.info(f"Sent {sent} alerts")
         except (psycopg2.Error, requests.exceptions.RequestException, OSError) as e:
             logger.error(f"Error: {e}")
-        
+
+        check_interval = get_setting('check_interval')
+        logger.info(f"Next check in {check_interval}s")
         try:
-            await asyncio.wait_for(shutdown_event.wait(), timeout=CHECK_INTERVAL)
+            await asyncio.wait_for(shutdown_event.wait(), timeout=check_interval)
         except asyncio.TimeoutError:
             continue
-    
+
     logger.info(f"Alerts stopped. Total sent: {alerts_sent}")
 
 
@@ -186,13 +201,10 @@ def signal_handler():
 
 async def main():
     init_db_pool()
-    
     loop = asyncio.get_event_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, signal_handler)
-    
     await alerts_loop()
-    
     if db_pool:
         db_pool.closeall()
 
