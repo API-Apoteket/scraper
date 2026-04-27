@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/blixten85/scraper/compare/v1.7.0...v1.7.1) (2026-04-27)
+
+
+### Bug Fixes
+
+* add path validation to api_request to prevent SSRF ([0539f42](https://github.com/blixten85/scraper/commit/0539f428103523dcb7b308074547c0ae7664ea43))
+
 ## [1.7.0](https://github.com/blixten85/scraper/compare/v1.6.0...v1.7.0) (2026-04-26)
 
 
