@@ -893,7 +893,7 @@ def detect_selectors():
         url = 'https://' + url
 
     detect_js = """() => {
-        const PRICE_RE = /\\d[\\d\\s]*\\s*(kr|SEK|:-)/i;
+        const PRICE_RE = /\\d[\\d\\s]*\\s*(kr|SEK|:-|,\\d{2})/i;
         const selectorCount = {};
 
         function getSelector(el) {
@@ -1011,6 +1011,37 @@ def detect_selectors():
             siteName = document.title.split(/[-|–—]/)[0].trim();
         }
 
+        // Fallback: retry with looser price matching (3+ digit number)
+        if (!productSelector) {
+            const LOOSE_PRICE_RE = /\\b\\d{3}[\\d\\s]*\\b/;
+            for (const [sel] of candidates) {
+                const elements = Array.from(document.querySelectorAll(sel));
+                const withPrice = elements.slice(0, 20).filter(el => LOOSE_PRICE_RE.test(el.innerText));
+                if (withPrice.length < 2) continue;
+                productSelector = sel;
+                const container = withPrice[0];
+                const heading = container.querySelector('h1,h2,h3,h4,[class*="title"],[class*="name"]');
+                if (heading) {
+                    const tag = heading.tagName.toLowerCase();
+                    const cls = (heading.className || '').trim().split(/\\s+/)[0];
+                    titleSelector = cls ? tag + '.' + cls : tag;
+                }
+                const priceEl = container.querySelector('[class*="price"],[class*="pris"],[class*="cost"],[class*="amount"]');
+                if (priceEl) {
+                    const tag = priceEl.tagName.toLowerCase();
+                    const cls = (priceEl.className || '').trim().split(/\\s+/)[0];
+                    priceSelector = cls ? tag + '.' + cls : tag;
+                }
+                const anchor = container.tagName === 'A' ? container
+                    : (container.querySelector('a[href]') || container.closest('a[href]'));
+                if (anchor) {
+                    const cls = (anchor.className || '').trim().split(/\\s+/)[0];
+                    linkSelector = cls ? 'a.' + cls : 'a';
+                }
+                break;
+            }
+        }
+
         return {
             product_selector: productSelector,
             title_selector: titleSelector,
@@ -1047,11 +1078,17 @@ def detect_selectors():
                 try:
                     await page.goto(url, timeout=60000, wait_until="domcontentloaded")
                     try:
-                        await page.wait_for_load_state("networkidle", timeout=8000)
+                        await page.wait_for_load_state("networkidle", timeout=10000)
                     except Exception as e:
                         logger.debug("networkidle timeout during detect, continuing: %s", e)
                     await accept_cookies(page)
-                    await asyncio.sleep(3)
+                    await asyncio.sleep(2)
+                    # Scroll to trigger lazy-loaded content, then wait for it to render
+                    for _ in range(3):
+                        await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
+                        await asyncio.sleep(1)
+                    await page.evaluate("window.scrollTo(0, 0)")
+                    await asyncio.sleep(2)
                     result = await page.evaluate(detect_js)
                     bot_protection = await page.evaluate(bot_detect_js)
                     return {
