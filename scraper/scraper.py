@@ -1262,19 +1262,15 @@ _EXPORT_QUERIES = {
 }
 
 
-def _build_export_query(include_drops, site_name=None):
-    query, needs_site = _EXPORT_QUERIES[(bool(include_drops), bool(site_name))]
-    params = (site_name,) if needs_site else ()
-    return query, params
-
 
 @app.route('/export/<site_name>')
 def export_site_csv(site_name):
     include_drops = request.args.get('include_drops', '0') == '1'
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    query, params = _build_export_query(include_drops, site_name)
-    cur.execute(query, params)
+    # Always use the site-specific query variant; site_name never influences query selection
+    query, _ = _EXPORT_QUERIES[(include_drops, True)]
+    cur.execute(query, (site_name,))
     products = cur.fetchall()
     return_db(conn)
 
@@ -1303,8 +1299,8 @@ def export_all_csv():
     include_drops = request.args.get('include_drops', '0') == '1'
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    query, params = _build_export_query(include_drops)
-    cur.execute(query, params)
+    query, _ = _EXPORT_QUERIES[(include_drops, False)]
+    cur.execute(query, ())
     products = cur.fetchall()
     return_db(conn)
 
