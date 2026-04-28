@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/blixten85/scraper/compare/v1.17.0...v1.18.0) (2026-04-28)
+
+
+### Features
+
+* subcategory auto-discovery, fyndhörna filter, CSV price drop toggle ([#103](https://github.com/blixten85/scraper/issues/103)) ([32a9964](https://github.com/blixten85/scraper/commit/32a99644213e1e356e864c7f195efc075ade5132))
+
 ## [1.17.0](https://github.com/blixten85/scraper/compare/v1.16.0...v1.17.0) (2026-04-28)
 
 
