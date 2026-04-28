@@ -6,6 +6,7 @@ with proxy support, retry/backoff and periodic flush
 """
 
 import asyncio
+import csv
 import json
 import datetime
 import os
@@ -14,10 +15,11 @@ import logging
 import sys
 import random
 import signal
+from io import StringIO
 from urllib.parse import urljoin
 from playwright.async_api import async_playwright
 from playwright_stealth import stealth_async
-from flask import Flask, request, jsonify
+from flask import Flask, Response, request, jsonify
 import threading
 import psycopg2
 import psycopg2.extras
@@ -1276,10 +1278,6 @@ def export_site_csv(site_name):
     products = cur.fetchall()
     return_db(conn)
 
-    import csv
-    from io import StringIO
-    from flask import Response
-
     output = StringIO()
     writer = csv.writer(output)
     if include_drops:
@@ -1309,10 +1307,6 @@ def export_all_csv():
     cur.execute(query, params)
     products = cur.fetchall()
     return_db(conn)
-
-    import csv
-    from io import StringIO
-    from flask import Response
 
     output = StringIO()
     writer = csv.writer(output)

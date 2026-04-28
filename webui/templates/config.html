@@ -67,7 +67,7 @@
                         <div class="col-md-6 d-flex align-items-end">
                             <div class="d-flex flex-column gap-1 mb-1">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="cfgSubcategory">
+                                    <input class="form-check-input" type="checkbox" id="cfgSubcategory" onchange="togglePaginationSelector()">
                                     <label class="form-check-label" for="cfgSubcategory">
                                         Auto-discover subcategories <small class="text-muted">(följ kategorilänkar)</small>
                                     </label>
@@ -79,6 +79,11 @@
                                     </label>
                                 </div>
                             </div>
+                        </div>
+                        <div class="col-12" id="paginationSelectorRow" style="display:none">
+                            <label class="form-label">Category link selector <small class="text-muted">(vilka länkar scrapern följer)</small></label>
+                            <input type="text" class="form-control" id="cfgPaginationSelector" placeholder="a[href*='/kategori/']">
+                            <div class="form-text">CSS-selector för kategorilänkar på sidan. Fylls i automatiskt av templates.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Product container selector</label>
@@ -239,6 +244,11 @@
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
 
+        function togglePaginationSelector() {
+            const show = document.getElementById('cfgSubcategory').checked;
+            document.getElementById('paginationSelectorRow').style.display = show ? 'block' : 'none';
+        }
+
         function loadTemplate(name) {
             const t = templates[name];
             if (!t) return;
@@ -252,6 +262,8 @@
             document.getElementById('cfgProxy').value = '';
             document.getElementById('cfgStealth').checked = false;
             document.getElementById('cfgSubcategory').checked = !!t.subcategory;
+            document.getElementById('cfgPaginationSelector').value = t.pagination_selector || '';
+            togglePaginationSelector();
             document.getElementById('addForm').style.display = 'block';
             document.getElementById('addForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
@@ -305,7 +317,6 @@
         function addConfig(e) {
             e.preventDefault();
             const isSubcategory = document.getElementById('cfgSubcategory').checked;
-            const t = Object.values(templates).find(t => t.name === document.getElementById('cfgName').value);
             const data = {
                 name: document.getElementById('cfgName').value,
                 base_url: normalizeUrl(document.getElementById('cfgUrl').value.trim()),
@@ -314,7 +325,7 @@
                 price_selector: document.getElementById('cfgPrice').value,
                 link_selector: document.getElementById('cfgLink').value,
                 pagination_type: isSubcategory ? 'subcategory' : 'query',
-                pagination_selector: isSubcategory ? (t?.pagination_selector || '') : '',
+                pagination_selector: isSubcategory ? document.getElementById('cfgPaginationSelector').value.trim() : '',
                 exclude_link_pattern: document.getElementById('cfgExclude').value.trim(),
                 proxy_url: document.getElementById('cfgProxy').value.trim(),
                 use_stealth: document.getElementById('cfgStealth').checked,
