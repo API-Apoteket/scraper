@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Optional
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 import psycopg2
 import psycopg2.extras
 from psycopg2.pool import ThreadedConnectionPool
@@ -114,22 +115,63 @@ def health():
             return_db(conn)
 
 @app.get("/products")
-def get_products(limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0), search: Optional[str] = Query(None)):
+def get_products(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    search: Optional[str] = Query(None),
+    missing_description: bool = Query(False, description="Return only products without a generated description"),
+):
     conn = get_db()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        query = "SELECT id, title, url, current_price, first_seen, last_updated FROM products"
-        params = []
+        base_columns = (
+            "SELECT id, title, url, current_price, first_seen, last_updated, "
+            "description, description_why, description_updated_at FROM products"
+        )
+        clauses = []
+        params: list = []
         if search:
-            query += " WHERE title ILIKE %s"
+            clauses.append("title ILIKE %s")
             params.append(f"%{search}%")
-        query += " ORDER BY last_updated DESC LIMIT %s OFFSET %s"
-        params.extend([limit, offset])
-        cur.execute(query, params)
+        if missing_description:
+            clauses.append("description IS NULL")
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        query = base_columns + where + " ORDER BY last_updated DESC LIMIT %s OFFSET %s"
+        cur.execute(query, params + [limit, offset])
         products = cur.fetchall()
-        cur.execute("SELECT COUNT(*) FROM products" + (" WHERE title ILIKE %s" if search else ""), params[:-2] if search else [])
+        cur.execute("SELECT COUNT(*) FROM products" + where, params)
         total = cur.fetchone()['count']
         return {"products": products, "total": total, "limit": limit, "offset": offset}
+    finally:
+        return_db(conn)
+
+
+class ProductDescriptionUpdate(BaseModel):
+    description: str = Field(..., min_length=1, max_length=4000)
+    why: Optional[str] = Field(None, max_length=4000)
+
+
+@app.put("/products/{product_id}/description")
+def set_product_description(product_id: int, payload: ProductDescriptionUpdate):
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE products SET description = %s, description_why = %s, "
+            "description_updated_at = NOW() WHERE id = %s",
+            (payload.description, payload.why, product_id),
+        )
+        if cur.rowcount == 0:
+            conn.rollback()
+            raise HTTPException(status_code=404, detail="Product not found")
+        conn.commit()
+        return {"status": "success", "product_id": product_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Update description error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update description")
     finally:
         return_db(conn)
 
