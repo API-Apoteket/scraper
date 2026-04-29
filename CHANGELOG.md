@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/blixten85/scraper/compare/v1.18.1...v1.19.0) (2026-04-29)
+
+
+### Features
+
+* add product description columns and API endpoints ([#108](https://github.com/blixten85/scraper/issues/108)) ([d9e0ff6](https://github.com/blixten85/scraper/commit/d9e0ff60558a1e54387d84b9313f0002e06e78f2))
+
 ## [1.18.1](https://github.com/blixten85/scraper/compare/v1.18.0...v1.18.1) (2026-04-28)
 
 
