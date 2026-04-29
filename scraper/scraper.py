@@ -274,6 +274,11 @@ def init_db():
     cur.execute("ALTER TABLE scraper_config ADD COLUMN IF NOT EXISTS proxy_url TEXT DEFAULT ''")
     cur.execute("ALTER TABLE scraper_config ADD COLUMN IF NOT EXISTS exclude_link_pattern TEXT DEFAULT ''")
 
+    cur.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT")
+    cur.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS description_why TEXT")
+    cur.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS description_updated_at TIMESTAMP")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_products_missing_description ON products(id) WHERE description IS NULL")
+
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_url ON products(url)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_last_updated ON products(last_updated)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_price_history_product ON price_history(product_id)")
