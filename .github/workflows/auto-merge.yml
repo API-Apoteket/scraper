@@ -19,18 +19,18 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Auto-merge all github_actions updates (no build triggered)
+      - name: Auto-merge github_actions updates
         if: |
           steps.metadata.outputs.package-ecosystem == 'github_actions' && (
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
           steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
           steps.metadata.outputs.update-type == 'version-update:semver-major')
-        run: gh pr merge --admin --delete-branch --squash "$PR_URL"
+        run: gh pr merge --auto --delete-branch --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
-      - name: Auto-merge patch and minor updates (other ecosystems — wait for builds)
+      - name: Auto-merge patch and minor updates (other ecosystems)
         if: |
           steps.metadata.outputs.package-ecosystem != 'github_actions' && (
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
@@ -38,29 +38,27 @@ jobs:
         run: gh pr merge --auto --delete-branch --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
   release-please:
     runs-on: ubuntu-latest
     if: startsWith(github.head_ref, 'release-please--')
     steps:
       - name: Merge release PR
-        run: gh pr merge --admin --squash --delete-branch "$PR_URL"
+        run: gh pr merge --auto --squash --delete-branch "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
   security-autofix:
     runs-on: ubuntu-latest
-    if: |
-      contains(github.head_ref, 'alert-autofix') ||
-      contains(github.head_ref, 'copilot')
+    if: contains(github.head_ref, 'alert-autofix')
     steps:
       - name: Enable auto-merge for security fixes
         run: gh pr merge --auto --squash --delete-branch "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
   claude:
     runs-on: ubuntu-latest
@@ -79,6 +77,18 @@ jobs:
     if: startsWith(github.head_ref, 'codex/')
     steps:
       - name: Auto-merge Codex AI PRs once checks pass
+        run: |
+          gh pr merge --auto --squash --delete-branch "$PR_URL"
+          gh pr edit "$PR_URL" --add-label "auto-merge"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ github.token }}
+
+  copilot:
+    runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'copilot/')
+    steps:
+      - name: Auto-merge Copilot PRs once checks pass
         run: |
           gh pr merge --auto --squash --delete-branch "$PR_URL"
           gh pr edit "$PR_URL" --add-label "auto-merge"
