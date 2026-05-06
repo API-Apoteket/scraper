@@ -41,7 +41,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ env.IMAGE_NAME }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/scraper
+    
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
