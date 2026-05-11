@@ -7,6 +7,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-316192)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-compose-2496ED)](https://www.docker.com/)
 [![CodeRabbit](https://img.shields.io/coderabbit/prs/github/API-Apoteket/scraper)](https://coderabbit.ai)
+![Downloads](https://img.shields.io/github/downloads/api-apoteket/scraper/total)
 
 **Production-ready web scraping platform with PostgreSQL, WebUI, REST API, and price monitoring.**
 
