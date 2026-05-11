@@ -26,6 +26,8 @@ RUN apt-get update && apt-get install -y \
 
 RUN mkdir -p /logs && chmod 777 /logs
 
+RUN pip install --upgrade "pip>=26.1"
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
     python -c "\
