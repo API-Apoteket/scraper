@@ -1,13 +1,13 @@
 # Web Scraper Platform
 
-[![Build](https://github.com/API-Apoteket/scraper/actions/workflows/build.yml/badge.svg)](https://github.com/API-Apoteket/scraper/actions/workflows/build.yml)
-[![CodeQL](https://github.com/API-Apoteket/scraper/actions/workflows/codeql.yml/badge.svg)](https://github.com/API-Apoteket/scraper/actions/workflows/codeql.yml)
-[![Release](https://img.shields.io/github/v/release/API-Apoteket/scraper)](https://github.com/API-Apoteket/scraper/releases)
-[![Image](https://ghcr-badge.egpl.dev/api-apoteket/scraper/size?color=blue&label=image)](https://github.com/API-Apoteket/scraper/pkgs/container/scraper)
+[![Build](https://github.com/api-apoteket/scraper/actions/workflows/build.yml/badge.svg)](https://github.com/api-apoteket/scraper/actions/workflows/build.yml)
+[![CodeQL](https://github.com/api-apoteket/scraper/actions/workflows/codeql.yml/badge.svg)](https://github.com/api-apoteket/scraper/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/api-apoteket/scraper)](https://github.com/api-apoteket/scraper/releases)
+[![Image](https://ghcr-badge.egpl.dev/api-apoteket/scraper/size?color=blue&label=image)](https://github.com/api-apoteket/scraper/pkgs/container/scraper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.14-blue)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-316192)](https://www.postgresql.org/)
-[![CodeRabbit](https://img.shields.io/coderabbit/prs/github/API-Apoteket/scraper)](https://coderabbit.ai)
+[![CodeRabbit](https://img.shields.io/coderabbit/prs/github/api-apoteket/scraper)](https://coderabbit.ai)
 ![Downloads](https://img.shields.io/github/downloads/api-apoteket/scraper/total)
 
 **Production-ready web scraping platform with PostgreSQL, WebUI, REST API, and price monitoring.**
