@@ -160,6 +160,36 @@ Add this service to your `docker-compose.yml` for automatic daily `pg_dump` back
 
 ---
 
+## Upgrading PostgreSQL (major version)
+
+PostgreSQL does not support in-place major version upgrades — the data directory must be migrated with `pg_dump`/`pg_restore`.
+
+```bash
+# 1. Dump the database (while the old container is still running)
+docker compose exec postgres sh -c \
+  'pg_dump -U scraper scraper -Fc -f /tmp/scraper.dump && cat /tmp/scraper.dump' \
+  > /tmp/scraper.dump
+
+# 2. Stop and remove the old container + volume
+docker compose down postgres
+sudo rm -rf ${DOCKER}/scraper/postgres
+
+# 3. Update docker-compose.yml to the new PostgreSQL version, then start
+docker compose up -d postgres
+
+# 4. Wait for postgres to be healthy, then restore
+sleep 5
+docker compose exec -T postgres sh -c \
+  'PGPASSWORD=$(cat /credentials/db_password) \
+   pg_restore -U scraper -d scraper /tmp/scraper.dump' \
+  < /tmp/scraper.dump
+
+# 5. Start the rest
+docker compose up -d
+```
+
+---
+
 ## Troubleshooting
 
 ### Postgres won't start
