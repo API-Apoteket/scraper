@@ -3,8 +3,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/scraper"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Europe/Stockholm"
     labels:
@@ -15,8 +14,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/webui"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Europe/Stockholm"
     labels:
@@ -27,8 +25,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/api"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Europe/Stockholm"
     labels:
@@ -39,8 +36,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/alerts"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Europe/Stockholm"
     labels:
@@ -51,8 +47,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Europe/Stockholm"
     labels:
