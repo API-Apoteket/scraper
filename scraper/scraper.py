@@ -569,7 +569,7 @@ async def scrape_site(context, config, page_sem=None):
                                 n = await asyncio.wait_for(_extract_query_elements(), timeout=60)
                                 products_found += n
                             except asyncio.TimeoutError:
-                                logger.warning(f"  Extraction timed out after 60s, moving on")
+                                logger.warning("  Extraction timed out after 60s, moving on")
                         finally:
                             await page.close()
                             page = None
