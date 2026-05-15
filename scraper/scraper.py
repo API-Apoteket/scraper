@@ -493,7 +493,7 @@ async def scrape_site(context, config, page_sem=None):
                             )
                             for link in links:
                                 link = link.rstrip('/')
-                                if link not in visited and link != base:
+                                if link not in visited:
                                     queue.append(link)
                         except Exception as e:
                             logger.debug(f"Pagination selector failed: {e}")
